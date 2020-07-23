@@ -3,10 +3,8 @@ package com.lhd.audiowave;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -14,7 +12,6 @@ import android.graphics.RectF;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.util.SizeF;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -25,6 +22,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.content.res.ResourcesCompat;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -104,7 +102,7 @@ public class AudioWaveView extends View {
 
             @Override
             public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-                eLog("Scaling: New: ", scaleGestureDetector.getCurrentSpanX(), "-- Old: ", currentScaleSpanX);
+                //eLog("Scaling: New: ", scaleGestureDetector.getCurrentSpanX(), "-- Old: ", currentScaleSpanX);
                 float distanceSpan = scaleGestureDetector.getCurrentSpanX() - currentScaleSpanX;
                 float adjustZoom = 0f;
                 if (distanceSpan > touchSlop) {
@@ -126,14 +124,14 @@ public class AudioWaveView extends View {
 
             @Override
             public boolean onScaleBegin(ScaleGestureDetector scaleGestureDetector) {
-                eLog("Scale Begin ", scaleGestureDetector.getCurrentSpanX());
+                //eLog("Scale Begin ", scaleGestureDetector.getCurrentSpanX());
                 currentScaleSpanX = scaleGestureDetector.getCurrentSpanX();
                 return true;
             }
 
             @Override
             public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
-                eLog("Scale End");
+                //eLog("Scale End");
             }
         });
         if (attrs != null) {
@@ -157,6 +155,14 @@ public class AudioWaveView extends View {
             paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, Color.BLACK));
             paintTimeLine.setTextSize(ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_size, dpToPixel(9)));
             paintTimeLine.setTextAlign(Paint.Align.CENTER);
+
+            modeEdit = ModeEdit.NONE;
+            int modeInt = ta.getInt(R.styleable.AudioWaveView_awv_mode_edit, ModeEdit.NONE.mode);
+            if (modeInt == ModeEdit.CUT.mode) {
+                modeEdit = ModeEdit.CUT;
+            } else if (modeInt == ModeEdit.TRIM.mode) {
+                modeEdit = ModeEdit.TRIM;
+            }
 
             int fontId = ta.getResourceId(R.styleable.AudioWaveView_awv_text_timeline_font, -1);
             if (fontId != -1) {
@@ -439,12 +445,37 @@ public class AudioWaveView extends View {
         } else if (isShowRandomPreview) {
             drawRandomPreview(canvas);
         }
+
+        drawText(canvas);
     }
 
     private void drawText(Canvas canvas) {
+        float yText = rectWave.top + textTimeLinePadding;
+        float spaceBetweenTwoTimeLine = textTimeLineDefaultWidth * 3f / 2;
+        eLog("sPACE: ",spaceBetweenTwoTimeLine);
+        int countText = (int) (waveViewCurrentWidth / spaceBetweenTwoTimeLine);
+        canvas.drawText("00:00", textTimeLineDefaultWidth / 2f, yText, paintTimeLine);
+        if (duration>0) {
+            float offset = spaceBetweenTwoTimeLine / 2f;
+            for (int i = 1; i < countText; i++) {
+                float progressTime = convertPositionToProgress(offset);
+                String sTime = convertTimeToTimeFormat(progressTime);
+                canvas.drawText(sTime, textTimeLineDefaultWidth / 2f, yText, paintTimeLine);
+                offset += spaceBetweenTwoTimeLine / 2f;
+            }
+        }
+    }
 
-        int countText = (int) (waveViewCurrentWidth / (textTimeLineDefaultWidth * 3 / 2));
+    private float convertPositionToProgress(float pixel) {
+        return pixel / rectWave.width() * duration;
+    }
 
+    private String convertTimeToTimeFormat(float time) {
+        int t = (int) time;
+        int second = t % 60;
+        int minute = t / 60;
+        DecimalFormat format = new DecimalFormat("00");
+        return format.format(minute) + ":" + format.format(second);
     }
 
     private List<Float> listPreviewWave = new ArrayList<>(); //List fake for show random preview
