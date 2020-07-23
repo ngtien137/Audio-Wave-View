@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">DemoAudioWaveView</string>
+    <string name="choose_audio">Choose audio</string>
 </resources>

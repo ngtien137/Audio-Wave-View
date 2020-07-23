@@ -1,16 +1,70 @@
 package com.lhd.audiowave;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.PointF;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.util.SizeF;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.ViewConfiguration;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.core.content.res.ResourcesCompat;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class AudioWaveView extends View {
+
+    public static boolean ENABLE_LOG = true;
+
+    private RectF rectOverlayCenter = new RectF();
+    private RectF rectOverlayLeft = new RectF();
+    private RectF rectOverlayRight = new RectF();
+    private RectF rectView = new RectF();
+    private RectF rectWave = new RectF();
+    private Rect rectTimeLine = new Rect();
+
+    private Paint paintDefault = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintOverlay = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintBackground = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintWave = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintTimeLine = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    private float waveLinePadding = 0f;
+    private float waveLineMaxHeight = 0f;
+    private float waveLineWidth = 0f;
+
+    private PointF pointDown = new PointF();
+    private boolean isScrolling = false;
+
+    private IAudioListener audioListener;
+    private IInteractedListener interactedListener;
+
+    private float waveViewCurrentWidth;
+    private int touchSlop;
+    private boolean isShowRandomPreview = true;
+    private float waveZoomLevel = 1f;
+    private float maxWaveZoomLevel = 5f;
+    private float minWaveZoomLevel = 0.5f;
+
+    private ScaleGestureDetector scaleGestureDetector;
+
     public AudioWaveView(Context context) {
         super(context);
         initView(context, null);
@@ -32,12 +86,92 @@ public class AudioWaveView extends View {
         initView(context, attrs);
     }
 
-    public void initView(Context context, @Nullable AttributeSet attrs) {
-        if (attrs != null) {
-            TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.AudioWaveView);
+    private float currentScaleSpanX = 0f;
 
+    public void initView(Context context, @Nullable AttributeSet attrs) {
+        touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        scaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.OnScaleGestureListener() {
+
+            @Override
+            public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
+                eLog("Scaling: New: ", scaleGestureDetector.getCurrentSpanX(), "-- Old: ", currentScaleSpanX);
+                float distanceSpan = scaleGestureDetector.getCurrentSpanX() - currentScaleSpanX;
+                float adjustZoom = 0f;
+                if (distanceSpan > touchSlop) {
+                    adjustZoom = 0.1f;
+                } else if (distanceSpan < -touchSlop) {
+                    adjustZoom = -0.1f;
+                }
+                if (adjustZoom != 0) {
+                    adjustZoomLevel(adjustZoom);
+                    currentScaleSpanX = scaleGestureDetector.getCurrentSpanX();
+                    adjustWaveByZoomLevel();
+                    calculateCurrentWidthView();
+                    if (interactedListener != null)
+                        interactedListener.onAudioBarScaling();
+                    invalidate();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onScaleBegin(ScaleGestureDetector scaleGestureDetector) {
+                eLog("Scale Begin ", scaleGestureDetector.getCurrentSpanX());
+                currentScaleSpanX = scaleGestureDetector.getCurrentSpanX();
+                return true;
+            }
+
+            @Override
+            public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
+                eLog("Scale End");
+            }
+        });
+        if (attrs != null) {
+            float density = getResources().getDisplayMetrics().density;
+            eLog("Density: ", density);
+            TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.AudioWaveView);
+            paintBackground.setColor(ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.TRANSPARENT));
+
+            int overlayColor = ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.parseColor("#40000000"));
+            paintOverlay.setColor(overlayColor);
+
+            paintWave.setColor(ta.getColor(R.styleable.AudioWaveView_awv_wave_color, Color.BLACK));
+            waveLineWidth = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_size, dpToPixel(2));
+            adjustWaveByZoomLevel();
+            paintWave.setStrokeCap(Paint.Cap.ROUND);
+            waveLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_padding, waveLineWidth / 10f);
+            waveLineMaxHeight = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_max_height, 0f);
+
+            paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, Color.BLACK));
+            paintTimeLine.setTextSize(ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_size, dpToPixel(9)));
+
+            int fontId = ta.getResourceId(R.styleable.AudioWaveView_awv_text_timeline_font, -1);
+            if (fontId != -1) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    paintTimeLine.setTypeface(getResources().getFont(fontId));
+                } else
+                    paintTimeLine.setTypeface(ResourcesCompat.getFont(context, fontId));
+            }
+
+            isShowRandomPreview = ta.getBoolean(R.styleable.AudioWaveView_awv_show_random_preview, true);
             ta.recycle();
         }
+    }
+
+    private void adjustZoomLevel(float value) {
+        if (waveZoomLevel + value > maxWaveZoomLevel)
+            waveZoomLevel = maxWaveZoomLevel;
+        else if (waveZoomLevel + value < minWaveZoomLevel)
+            waveZoomLevel = minWaveZoomLevel;
+        else waveZoomLevel += value;
+    }
+
+    private void adjustWaveByZoomLevel() {
+        paintWave.setStrokeWidth(waveLineWidth * waveZoomLevel);
+    }
+
+    private float dpToPixel(float dp) {
+        return dp * getResources().getDisplayMetrics().density;
     }
 
     @Override
@@ -48,11 +182,25 @@ public class AudioWaveView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-    }
+        rectView.set(getPaddingLeft(), getPaddingTop(), w - getPaddingRight(), h - getPaddingBottom());
+        rectWave.set(rectView.left, rectView.top, rectView.right, rectView.bottom);
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
+        if (waveLineMaxHeight == 0f) {
+            waveLineMaxHeight = rectView.height() - paintWave.getStrokeWidth();
+        } else {
+            waveLineMaxHeight -= paintWave.getStrokeWidth();
+        }
+
+        rectOverlayCenter.top = rectView.top;
+        rectOverlayCenter.bottom = rectView.bottom;
+
+        rectOverlayLeft.top = rectView.top;
+        rectOverlayLeft.bottom = rectView.bottom;
+
+        rectOverlayRight.top = rectView.top;
+        rectOverlayRight.bottom = rectView.bottom;
+
+        calculateCurrentWidthView();
     }
 
     //Sound file
@@ -65,6 +213,7 @@ public class AudioWaveView extends View {
     private double[][] mValuesByZoomLevel;
     private double[] mZoomFactorByZoomLevel;
     private int mZoomLevel;
+    private int[] mHeightsAtThisZoomLevel;
 
     private boolean mInitialized;
 
@@ -203,10 +352,177 @@ public class AudioWaveView extends View {
         return mSoundFile != null;
     }
 
-    public void setSoundFile(SoundFile soundFile) {
-        mSoundFile = soundFile;
-        mSampleRate = mSoundFile.getSampleRate();
-        mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
-        computeDoublesForAllZoomLevels();
+    public void setAudioPath(String path) {
+        try {
+            mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
+                @Override
+                public boolean reportProgress(double fractionComplete) {
+                    if (audioListener != null) {
+                        audioListener.onLoadingAudio((int) (fractionComplete * 100), false);
+                    }
+                    eLog("Progress: ", (int) (fractionComplete * 100));
+                    return true;
+                }
+            });
+            if (audioListener != null) {
+                audioListener.onLoadingAudio(100, true);
+            }
+            mSampleRate = mSoundFile.getSampleRate();
+            mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
+            computeDoublesForAllZoomLevels();
+            computeIntsForThisZoomLevel();
+            calculateCurrentWidthView();
+            postInvalidate();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (SoundFile.InvalidInputException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void computeIntsForThisZoomLevel() {
+        int halfHeight = (int) (waveLineMaxHeight / 2);
+        mHeightsAtThisZoomLevel = new int[mLenByZoomLevel[mZoomLevel]];
+        for (int i = 0; i < mLenByZoomLevel[mZoomLevel]; i++) {
+            mHeightsAtThisZoomLevel[i] =
+                    (int) ((mValuesByZoomLevel[mZoomLevel][i] * halfHeight));
+        }
+    }
+
+    private void calculateCurrentWidthView() {
+        if (mHeightsAtThisZoomLevel == null || mHeightsAtThisZoomLevel.length == 0) {
+            waveViewCurrentWidth = getWidth();
+        } else {
+            waveViewCurrentWidth = (mHeightsAtThisZoomLevel.length * waveLineWidth + (mHeightsAtThisZoomLevel.length - 1) * waveLinePadding) * waveZoomLevel;
+        }
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        canvas.drawRect(rectView, paintBackground);
+
+        if (hasSoundFile()) {
+            float centerY = rectWave.top + rectWave.height() / 2f;
+            float offset = 0f + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel;
+            for (int value : mHeightsAtThisZoomLevel) {
+                canvas.drawLine(offset, centerY - value, offset, centerY + value, paintWave);
+                offset += (waveLineWidth + waveLinePadding) * waveZoomLevel;
+            }
+        } else if (isShowRandomPreview) {
+            drawRandomPreview(canvas);
+        }
+    }
+
+    private List<Float> listPreviewWave = new ArrayList<>();
+
+    private void drawRandomPreview(Canvas canvas) {
+        boolean addToListPreview = true;
+        if (!listPreviewWave.isEmpty()) {
+            addToListPreview = false;
+        }
+        int demoListSize = (int) (getWidth() / ((waveLineWidth + waveLinePadding)));
+        eLog("Demo LIst Size: ", demoListSize);
+        float centerY = getHeight() / 2f;
+        float offset = 0f + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel;
+        for (int i = 0; i < demoListSize; i++) {
+            float randomPercent = ((new Random()).nextInt(10) / 10f);
+            eLog("Random: ", randomPercent);
+            float randomHeight = waveLineMaxHeight / 2f * randomPercent;
+            if (addToListPreview) {
+                listPreviewWave.add(randomHeight);
+            } else {
+                randomHeight = listPreviewWave.get(i);
+            }
+            canvas.drawLine(offset, centerY - randomHeight, offset, centerY + randomHeight, paintWave);
+            offset += (waveLineWidth + waveLinePadding) * waveZoomLevel;
+        }
+        waveViewCurrentWidth = offset - (waveLineWidth / 2f + waveLinePadding) * waveZoomLevel;
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        scaleGestureDetector.onTouchEvent(event);
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                if (interactedListener != null) {
+                    interactedListener.onTouchDownAudioBar();
+                }
+                pointDown.set(event.getX(), event.getY());
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                float disX = event.getX() - pointDown.x;
+                float disY = event.getY() - pointDown.y;
+                if (isScrolling) {
+                    scroll((int) disX);
+                    pointDown.set(event.getX(), event.getY());
+                    return true;
+                } else {
+                    if (Math.abs(disX) >= touchSlop) {
+                        isScrolling = true;
+                        return true;
+                    }
+                }
+                return false;
+            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_UP:
+                if (isScrolling) {
+                    isScrolling = false;
+                }
+                if (interactedListener != null) {
+                    interactedListener.onTouchReleaseAudioBar();
+                }
+                break;
+            default:
+
+                break;
+        }
+        return super.onTouchEvent(event);
+    }
+
+    public void scroll(int disX) {
+        if (getScrollX() - disX < 0 || waveViewCurrentWidth <= getWidth()) {
+            scrollTo(0, 0);
+        } else if (getScrollX() - disX > waveViewCurrentWidth - getWidth()) {
+            scrollTo((int) (waveViewCurrentWidth - getWidth()), 0);
+        } else
+            scrollBy(-disX, 0);
+
+    }
+
+    public interface IAudioListener {
+        void onLoadingAudio(int progress, boolean prepareView);
+    }
+
+    public interface IInteractedListener {
+        void onTouchDownAudioBar();
+
+        void onTouchReleaseAudioBar();
+
+        void onAudioBarScaling();
+    }
+
+    public void eLog(Object... message) {
+        if (ENABLE_LOG) {
+            StringBuilder mes = new StringBuilder();
+            for (Object sMes : message
+            ) {
+                String m = "null";
+                if (sMes != null)
+                    m = sMes.toString();
+                mes.append(m);
+            }
+            Log.e("AudioWaveViewLog", mes.toString());
+        }
+    }
+
+    public void setAudioListener(IAudioListener audioListener) {
+        this.audioListener = audioListener;
+    }
+
+    public void setInteractedListener(IInteractedListener interactedListener) {
+        this.interactedListener = interactedListener;
     }
 }

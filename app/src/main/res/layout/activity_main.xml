@@ -6,13 +6,26 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
+    <com.lhd.audiowave.AudioWaveView
+        android:id="@+id/audioView"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:background="#edecfb"
+        app:awv_wave_line_padding="2dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:awv_wave_color="#c3c2f1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
+        android:onClick="chooseAudio"
+        android:text="@string/choose_audio"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/audioView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="AudioWaveView">
+        <attr name="awv_show_random_preview" format="boolean" />
+        <attr name="awv_overlay_color" format="color" />
+        <attr name="awv_background_color" format="color" />
 
+        <attr name="awv_wave_color" format="color" />
+        <attr name="awv_wave_line_size" format="dimension" />
+        <attr name="awv_wave_line_max_height" format="dimension" />
+        <attr name="awv_wave_line_padding" format="dimension" />
+
+        <attr name="awv_text_timeline_color" format="color" />
+        <attr name="awv_text_timeline_size" format="dimension" />
+        <attr name="awv_text_timeline_padding_with_bar" format="dimension" />
+        <attr name="awv_text_timeline_font" format="reference" />
     </declare-styleable>
 </resources>
