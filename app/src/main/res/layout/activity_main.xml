@@ -10,11 +10,11 @@
         android:id="@+id/audioView"
         android:layout_width="match_parent"
         android:layout_height="150dp"
-        android:background="#edecfb"
-        app:awv_wave_line_padding="2dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
+        app:awv_background_color="#edecfb"
         app:awv_wave_color="#c3c2f1"
+        app:awv_wave_line_padding="2dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

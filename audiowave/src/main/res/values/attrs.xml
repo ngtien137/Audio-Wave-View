@@ -4,6 +4,7 @@
         <attr name="awv_show_random_preview" format="boolean" />
         <attr name="awv_overlay_color" format="color" />
         <attr name="awv_background_color" format="color" />
+        <attr name="awv_bar_audio_height" format="dimension" />
 
         <attr name="awv_wave_color" format="color" />
         <attr name="awv_wave_line_size" format="dimension" />
@@ -14,5 +15,11 @@
         <attr name="awv_text_timeline_size" format="dimension" />
         <attr name="awv_text_timeline_padding_with_bar" format="dimension" />
         <attr name="awv_text_timeline_font" format="reference" />
+
+        <attr name="awv_mode_edit" format="enum">
+            <enum name="none" value="0" />
+            <enum name="cut" value="1" />
+            <enum name="trim" value="2" />
+        </attr>
     </declare-styleable>
 </resources>

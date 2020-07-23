@@ -49,21 +49,31 @@ public class AudioWaveView extends View {
     private float waveLinePadding = 0f;
     private float waveLineMaxHeight = 0f;
     private float waveLineWidth = 0f;
+    private float audioBarHeight = 0f;
 
     private PointF pointDown = new PointF();
     private boolean isScrolling = false;
-
-    private IAudioListener audioListener;
-    private IInteractedListener interactedListener;
 
     private float waveViewCurrentWidth;
     private int touchSlop;
     private boolean isShowRandomPreview = true;
     private float waveZoomLevel = 1f;
-    private float maxWaveZoomLevel = 5f;
-    private float minWaveZoomLevel = 0.5f;
+    private final float maxWaveZoomLevel = 5f;
+    private final float minWaveZoomLevel = 0.5f;
+    private int textTimeLineDefaultWidth = 0;
+    private float textTimeLinePadding = 0;
+
 
     private ScaleGestureDetector scaleGestureDetector;
+    private IAudioListener audioListener;
+    private IInteractedListener interactedListener;
+
+    private float duration = 0f;
+    private float progress = 0f;
+    private float leftProgress = 0f;
+    private float rightProgress = 0f;
+    private float minRangeProgress = 0f;
+    private ModeEdit modeEdit = ModeEdit.NONE;
 
     public AudioWaveView(Context context) {
         super(context);
@@ -131,6 +141,7 @@ public class AudioWaveView extends View {
             eLog("Density: ", density);
             TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.AudioWaveView);
             paintBackground.setColor(ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.TRANSPARENT));
+            audioBarHeight = ta.getDimension(R.styleable.AudioWaveView_awv_bar_audio_height, 0f);
 
             int overlayColor = ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.parseColor("#40000000"));
             paintOverlay.setColor(overlayColor);
@@ -142,8 +153,10 @@ public class AudioWaveView extends View {
             waveLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_padding, waveLineWidth / 10f);
             waveLineMaxHeight = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_max_height, 0f);
 
+            textTimeLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_padding_with_bar, 0f);
             paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, Color.BLACK));
             paintTimeLine.setTextSize(ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_size, dpToPixel(9)));
+            paintTimeLine.setTextAlign(Paint.Align.CENTER);
 
             int fontId = ta.getResourceId(R.styleable.AudioWaveView_awv_text_timeline_font, -1);
             if (fontId != -1) {
@@ -181,12 +194,19 @@ public class AudioWaveView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
         rectView.set(getPaddingLeft(), getPaddingTop(), w - getPaddingRight(), h - getPaddingBottom());
-        rectWave.set(rectView.left, rectView.top, rectView.right, rectView.bottom);
+        if (audioBarHeight == 0f) {
+            audioBarHeight = rectView.height();
+        }
+        //text
+        String defaultTimeLine = "00:00";
+        paintTimeLine.getTextBounds(defaultTimeLine, 0, defaultTimeLine.length(), rectTimeLine);
+        textTimeLineDefaultWidth = rectTimeLine.width();
+        //
+        rectWave.set(rectView.left, rectView.centerY() - audioBarHeight / 2f, rectView.right, rectView.centerY() + audioBarHeight / 2f);
 
         if (waveLineMaxHeight == 0f) {
-            waveLineMaxHeight = rectView.height() - paintWave.getStrokeWidth();
+            waveLineMaxHeight = rectWave.height() - paintWave.getStrokeWidth(); //Phải trừ đi stroke width vì khi có stroke width thì đường vẽ bị to ra 1 nửa strokeWidth mỗi bên, trên, dưới
         } else {
             waveLineMaxHeight -= paintWave.getStrokeWidth();
         }
@@ -201,6 +221,7 @@ public class AudioWaveView extends View {
         rectOverlayRight.bottom = rectView.bottom;
 
         calculateCurrentWidthView();
+        super.onSizeChanged(w, h, oldw, oldh);
     }
 
     //Sound file
@@ -369,6 +390,10 @@ public class AudioWaveView extends View {
             }
             mSampleRate = mSoundFile.getSampleRate();
             mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
+            duration = mSoundFile.getDuration();
+            progress = 0f;
+            leftProgress = 0f;
+            rightProgress = duration;
             computeDoublesForAllZoomLevels();
             computeIntsForThisZoomLevel();
             calculateCurrentWidthView();
@@ -397,11 +422,12 @@ public class AudioWaveView extends View {
         } else {
             waveViewCurrentWidth = (mHeightsAtThisZoomLevel.length * waveLineWidth + (mHeightsAtThisZoomLevel.length - 1) * waveLinePadding) * waveZoomLevel;
         }
+        rectWave.right = rectView.left + waveViewCurrentWidth;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawRect(rectView, paintBackground);
+        canvas.drawRect(rectWave, paintBackground);
 
         if (hasSoundFile()) {
             float centerY = rectWave.top + rectWave.height() / 2f;
@@ -415,7 +441,13 @@ public class AudioWaveView extends View {
         }
     }
 
-    private List<Float> listPreviewWave = new ArrayList<>();
+    private void drawText(Canvas canvas) {
+
+        int countText = (int) (waveViewCurrentWidth / (textTimeLineDefaultWidth * 3 / 2));
+
+    }
+
+    private List<Float> listPreviewWave = new ArrayList<>(); //List fake for show random preview
 
     private void drawRandomPreview(Canvas canvas) {
         boolean addToListPreview = true;
@@ -423,12 +455,10 @@ public class AudioWaveView extends View {
             addToListPreview = false;
         }
         int demoListSize = (int) (getWidth() / ((waveLineWidth + waveLinePadding)));
-        eLog("Demo LIst Size: ", demoListSize);
         float centerY = getHeight() / 2f;
         float offset = 0f + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel;
         for (int i = 0; i < demoListSize; i++) {
             float randomPercent = ((new Random()).nextInt(10) / 10f);
-            eLog("Random: ", randomPercent);
             float randomHeight = waveLineMaxHeight / 2f * randomPercent;
             if (addToListPreview) {
                 listPreviewWave.add(randomHeight);
@@ -502,6 +532,16 @@ public class AudioWaveView extends View {
         void onTouchReleaseAudioBar();
 
         void onAudioBarScaling();
+    }
+
+    public enum ModeEdit {
+
+        NONE(0), TRIM(2), CUT(1);
+        public int mode;
+
+        ModeEdit(int mode) {
+            this.mode = mode;
+        }
     }
 
     public void eLog(Object... message) {
