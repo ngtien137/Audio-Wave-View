@@ -21,6 +21,7 @@ import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
@@ -28,7 +29,6 @@ import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -196,6 +196,17 @@ public class SoundFile {
         mProgressListener = progressListener;
     }
 
+    private static long getDuration(File file) {
+        long duration = 0;
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(file.getAbsolutePath());
+        String durationStr = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        mediaMetadataRetriever.release();
+        if (durationStr != null && !durationStr.isEmpty())
+            duration = Long.parseLong(durationStr);
+        return duration;
+    }
+
     private void ReadFile(File inputFile)
             throws java.io.FileNotFoundException,
             java.io.IOException, InvalidInputException {
@@ -204,6 +215,7 @@ public class SoundFile {
         int i;
 
         mInputFile = inputFile;
+        mDuration = getDuration(inputFile);
         String[] components = mInputFile.getPath().split("\\.");
         mFileType = components[components.length - 1];
         mFileSize = (int) mInputFile.length();
@@ -223,9 +235,9 @@ public class SoundFile {
         mChannels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
         mSampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
         // Expected total number of samples per channel.
-        mDuration = (format.getLong(MediaFormat.KEY_DURATION));
+        long sampleDuration = (format.getLong(MediaFormat.KEY_DURATION));
         int expectedNumSamples =
-                (int) ((mDuration / 1000000.f) * mSampleRate + 0.5f);
+                (int) ((sampleDuration / 1000000.f) * mSampleRate + 0.5f);
 
         MediaCodec codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
         codec.configure(format, null, null, 0);

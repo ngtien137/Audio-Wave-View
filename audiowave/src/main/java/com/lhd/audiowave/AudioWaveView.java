@@ -37,17 +37,28 @@ public class AudioWaveView extends View {
     private RectF rectView = new RectF();
     private RectF rectWave = new RectF();
     private Rect rectTimeLine = new Rect();
+    private Rect rectCenterProgress = new Rect();
+    private Rect rectLeftProgress = new Rect();
+    private Rect rectRightProgress = new Rect();
 
     private Paint paintDefault = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintOverlay = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintBackground = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintWave = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintTimeLine = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintTimeLineIndicator = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintTimeLineIndicatorSub = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintCenterProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintLeftProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintRightProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+    private boolean isShowTimeLineIndicator = true;
     private float waveLinePadding = 0f;
     private float waveLineMaxHeight = 0f;
     private float waveLineWidth = 0f;
     private float audioBarHeight = 0f;
+    private float timeLineIndicatorHeight = 0f;
+    private float numberSubTimelineIndicator = 3;
 
     private PointF pointDown = new PointF();
     private boolean isScrolling = false;
@@ -66,7 +77,7 @@ public class AudioWaveView extends View {
     private IAudioListener audioListener;
     private IInteractedListener interactedListener;
 
-    private float duration = 0f;
+    private float duration = 100f;
     private float progress = 0f;
     private float leftProgress = 0f;
     private float rightProgress = 0f;
@@ -145,16 +156,35 @@ public class AudioWaveView extends View {
             paintOverlay.setColor(overlayColor);
 
             paintWave.setColor(ta.getColor(R.styleable.AudioWaveView_awv_wave_color, Color.BLACK));
-            waveLineWidth = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_size, dpToPixel(2));
+            waveLineWidth = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_size, dpToPixel(0.5f));
             adjustWaveByZoomLevel();
             paintWave.setStrokeCap(Paint.Cap.ROUND);
             waveLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_padding, waveLineWidth / 10f);
             waveLineMaxHeight = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_max_height, 0f);
 
             textTimeLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_padding_with_bar, 0f);
-            paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, Color.BLACK));
+            paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, Color.parseColor("#45000000")));
             paintTimeLine.setTextSize(ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_size, dpToPixel(9)));
             paintTimeLine.setTextAlign(Paint.Align.CENTER);
+            int fontId = ta.getResourceId(R.styleable.AudioWaveView_awv_text_timeline_font, -1);
+            if (fontId != -1) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    paintTimeLine.setTypeface(getResources().getFont(fontId));
+                } else
+                    paintTimeLine.setTypeface(ResourcesCompat.getFont(context, fontId));
+            }
+
+            isShowTimeLineIndicator = ta.getBoolean(R.styleable.AudioWaveView_awv_show_timeline_indicator, true);
+            float timeLineIndicatorWidth = ta.getDimension(R.styleable.AudioWaveView_awv_indicator_timeline_width, dpToPixel(0.5f));
+            paintTimeLineIndicator.setColor(ta.getColor(R.styleable.AudioWaveView_awv_indicator_timeline_color, Color.parseColor("#30000000")));
+            paintTimeLineIndicator.setStrokeWidth(timeLineIndicatorWidth);
+            timeLineIndicatorHeight = ta.getDimension(R.styleable.AudioWaveView_awv_indicator_timeline_height, dpToPixel(6));
+            paintTimeLineIndicatorSub.setColor(ta.getColor(R.styleable.AudioWaveView_awv_indicator_timeline_sub_indicator_color, Color.parseColor("#15000000")));
+            paintTimeLineIndicatorSub.setStrokeWidth(timeLineIndicatorWidth);
+            numberSubTimelineIndicator = ta.getInt(R.styleable.AudioWaveView_awv_indicator_timeline_sub_indicator_count, 3);
+
+            paintCenterProgress.setColor(ta.getColor(R.styleable.AudioWaveView_awv_center_progress_color, Color.parseColor("#4643D3")));
+            paintCenterProgress.setStrokeWidth(ta.getDimension(R.styleable.AudioWaveView_awv_center_progress_size, dpToPixel(1)));
 
             modeEdit = ModeEdit.NONE;
             int modeInt = ta.getInt(R.styleable.AudioWaveView_awv_mode_edit, ModeEdit.NONE.mode);
@@ -164,15 +194,13 @@ public class AudioWaveView extends View {
                 modeEdit = ModeEdit.TRIM;
             }
 
-            int fontId = ta.getResourceId(R.styleable.AudioWaveView_awv_text_timeline_font, -1);
-            if (fontId != -1) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    paintTimeLine.setTypeface(getResources().getFont(fontId));
-                } else
-                    paintTimeLine.setTypeface(ResourcesCompat.getFont(context, fontId));
-            }
-
             isShowRandomPreview = ta.getBoolean(R.styleable.AudioWaveView_awv_show_random_preview, true);
+
+            duration = ta.getFloat(R.styleable.AudioWaveView_awv_duration, 100f);
+            progress = ta.getFloat(R.styleable.AudioWaveView_awv_progress, 0f);
+            leftProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_progress, 0f);
+            rightProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_progress, 100f);
+            rightProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_range_progress, 0f);
             ta.recycle();
         }
     }
@@ -205,9 +233,7 @@ public class AudioWaveView extends View {
             audioBarHeight = rectView.height();
         }
         //text
-        String defaultTimeLine = "00:00";
-        paintTimeLine.getTextBounds(defaultTimeLine, 0, defaultTimeLine.length(), rectTimeLine);
-        textTimeLineDefaultWidth = rectTimeLine.width();
+        loadTextTimelineSizeDefault("00:00");
         //
         rectWave.set(rectView.left, rectView.centerY() - audioBarHeight / 2f, rectView.right, rectView.centerY() + audioBarHeight / 2f);
 
@@ -228,6 +254,11 @@ public class AudioWaveView extends View {
 
         calculateCurrentWidthView();
         super.onSizeChanged(w, h, oldw, oldh);
+    }
+
+    private void loadTextTimelineSizeDefault(String defaultTimeLine) {
+        paintTimeLine.getTextBounds(defaultTimeLine, 0, defaultTimeLine.length(), rectTimeLine);
+        textTimeLineDefaultWidth = rectTimeLine.width();
     }
 
     //Sound file
@@ -436,7 +467,7 @@ public class AudioWaveView extends View {
         canvas.drawRect(rectWave, paintBackground);
 
         if (hasSoundFile()) {
-            float centerY = rectWave.top + rectWave.height() / 2f;
+            float centerY = rectWave.centerY();
             float offset = 0f + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel;
             for (int value : mHeightsAtThisZoomLevel) {
                 canvas.drawLine(offset, centerY - value, offset, centerY + value, paintWave);
@@ -446,24 +477,100 @@ public class AudioWaveView extends View {
             drawRandomPreview(canvas);
         }
 
-        drawText(canvas);
+        drawTimeLineAndIndicator(canvas);
     }
 
-    private void drawText(Canvas canvas) {
-        float yText = rectWave.top + textTimeLinePadding;
-        float spaceBetweenTwoTimeLine = textTimeLineDefaultWidth * 3f / 2;
-        eLog("sPACE: ",spaceBetweenTwoTimeLine);
+    /**
+     * Draw TimeLine and the line value indicator
+     */
+    private void drawTimeLineAndIndicator(Canvas canvas) {
+        loadTextTimelineSizeDefault("00:00");
+        float yText = rectWave.top - textTimeLinePadding;
+        float spaceBetweenTwoTimeLine = textTimeLineDefaultWidth * 2f;
         int countText = (int) (waveViewCurrentWidth / spaceBetweenTwoTimeLine);
-        canvas.drawText("00:00", textTimeLineDefaultWidth / 2f, yText, paintTimeLine);
-        if (duration>0) {
-            float offset = spaceBetweenTwoTimeLine / 2f;
-            for (int i = 1; i < countText; i++) {
+        float offset = textTimeLineDefaultWidth / 2f;
+        canvas.drawText("00:00", offset, yText, paintTimeLine);
+        drawTimeLineIndicator(canvas, offset, timeLineIndicatorHeight, paintTimeLineIndicator);
+        drawTimeLineIndicator(canvas, spaceBetweenTwoTimeLine / 2f, timeLineIndicatorHeight / 2f, paintTimeLineIndicatorSub);
+        drawTimeLineIndicator(canvas, offset + spaceBetweenTwoTimeLine / 2f, timeLineIndicatorHeight / 2f, paintTimeLineIndicatorSub);
+        if (duration > 0) {
+            offset = spaceBetweenTwoTimeLine;
+            for (int i = 0; i < countText; i++) {
                 float progressTime = convertPositionToProgress(offset);
                 String sTime = convertTimeToTimeFormat(progressTime);
-                canvas.drawText(sTime, textTimeLineDefaultWidth / 2f, yText, paintTimeLine);
-                offset += spaceBetweenTwoTimeLine / 2f;
+                boolean drawThisWave = false;
+                if (i == countText - 1) {
+                    float fixOffset = offset - spaceBetweenTwoTimeLine;
+                    if (rectWave.right - offset >= spaceBetweenTwoTimeLine) {
+                        drawThisWave = true;
+                    }
+                    //Không vẽ time line ở đây vì quá gần với timeline cuối
+                    //Nhưng vẫn vẽ các timeline phụ
+                    drawSubTimelineIndicator(canvas, fixOffset, (rectWave.right - textTimeLineDefaultWidth / 2f) - fixOffset, spaceBetweenTwoTimeLine);
+                } else {
+                    drawThisWave = true;
+                }
+                if (drawThisWave) {
+                    canvas.drawText(sTime, offset, yText, paintTimeLine);
+                    drawTimeLineIndicator(canvas, offset, timeLineIndicatorHeight, paintTimeLineIndicator);
+                    if (i < countText - 2) {
+                        drawSubTimelineIndicator(canvas, offset, spaceBetweenTwoTimeLine, spaceBetweenTwoTimeLine);
+                    }
+                }
+                offset += spaceBetweenTwoTimeLine;
+            }
+
+            //Vẽ timeline cuối cùng với giá trị là duration của audio
+            String lastTime = convertTimeToTimeFormat(duration);
+            loadTextTimelineSizeDefault(lastTime);
+            offset = rectWave.right - rectTimeLine.width() / 2f;
+            canvas.drawText(lastTime, offset, yText, paintTimeLine);
+            drawTimeLineIndicator(canvas, offset, timeLineIndicatorHeight, paintTimeLineIndicator);
+        }
+    }
+
+    /**
+     * Draw large line value indicator
+     */
+    private void drawTimeLineIndicator(Canvas canvas, float xIndicator, float height, Paint paintIndicator) {
+        if (isShowTimeLineIndicator) {
+            canvas.drawLine(xIndicator, rectWave.top, xIndicator, rectWave.top + height, paintIndicator);
+            canvas.drawLine(xIndicator, rectWave.bottom - height, xIndicator, rectWave.bottom, paintIndicator);
+        }
+    }
+
+    /**
+     * Draw small line value indicator
+     */
+    private void drawSubTimelineIndicator(Canvas canvas, float startX, float widthForSubIndicator, float minWidthForFullSub) {
+        if (isShowTimeLineIndicator && numberSubTimelineIndicator > 0) {
+            if (widthForSubIndicator >= minWidthForFullSub) {
+                float spaceBetween = widthForSubIndicator / (numberSubTimelineIndicator + 1);
+                float offset = startX + spaceBetween;
+                for (int i = 0; i < numberSubTimelineIndicator; i++) {
+                    drawTimeLineIndicator(canvas, offset, timeLineIndicatorHeight / 2f, paintTimeLineIndicatorSub);
+                    offset += spaceBetween;
+                }
+            } else {
+                float spaceBetween = widthForSubIndicator / 2;
+                float offset = startX + spaceBetween;
+                for (int i = 0; i < 2; i++) {
+                    drawTimeLineIndicator(canvas, offset, timeLineIndicatorHeight / 2f, paintTimeLineIndicatorSub);
+                    offset += spaceBetween;
+                }
             }
         }
+    }
+
+    /**
+     * Draw Center Progress
+     */
+    private void drawCenterProgress(Canvas canvas) {
+
+    }
+
+    private float convertProgressToPosition(float progress) {
+        return progress / duration * rectWave.width() + rectWave.left;
     }
 
     private float convertPositionToProgress(float pixel) {
@@ -471,7 +578,7 @@ public class AudioWaveView extends View {
     }
 
     private String convertTimeToTimeFormat(float time) {
-        int t = (int) time;
+        int t = (int) time / 1000;
         int second = t % 60;
         int minute = t / 60;
         DecimalFormat format = new DecimalFormat("00");

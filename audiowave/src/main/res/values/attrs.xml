@@ -15,11 +15,26 @@
         <attr name="awv_text_timeline_size" format="dimension" />
         <attr name="awv_text_timeline_padding_with_bar" format="dimension" />
         <attr name="awv_text_timeline_font" format="reference" />
+        <attr name="awv_show_timeline_indicator" format="boolean" />
+        <attr name="awv_indicator_timeline_color" format="color" />
+        <attr name="awv_indicator_timeline_width" format="dimension" />
+        <attr name="awv_indicator_timeline_height" format="dimension" />
+        <attr name="awv_indicator_timeline_sub_indicator_count" format="integer" />
+        <attr name="awv_indicator_timeline_sub_indicator_color" format="integer" />
+
+        <attr name="awv_center_progress_size" format="dimension" />
+        <attr name="awv_center_progress_color" format="color" />
 
         <attr name="awv_mode_edit" format="enum">
             <enum name="none" value="0" />
             <enum name="cut" value="1" />
             <enum name="trim" value="2" />
         </attr>
+
+        <attr name="awv_progress" format="integer" />
+        <attr name="awv_min_range_progress" format="integer" />
+        <attr name="awv_max_progress" format="integer" />
+        <attr name="awv_min_progress" format="integer" />
+        <attr name="awv_duration" format="integer" />
     </declare-styleable>
 </resources>
