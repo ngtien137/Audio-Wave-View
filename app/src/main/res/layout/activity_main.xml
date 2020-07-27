@@ -4,38 +4,84 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipChildren="false"
     tools:context=".MainActivity">
 
     <com.lhd.audiowave.AudioWaveView
         android:id="@+id/audioView"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="160dp"
         app:awv_background_color="#edecfb"
         app:awv_bar_audio_height="120dp"
         app:awv_max_progress="90"
         app:awv_min_progress="10"
+        app:awv_mode_edit="cut"
         app:awv_text_timeline_padding_with_bar="4dp"
         app:awv_thumb_edit_align="top"
-        app:awv_thumb_edit_height="130dp"
-        app:awv_thumb_edit_left_anchor_image="@drawable/ic_anchor_left"
-        app:awv_thumb_edit_left_anchor_image_align_horizontal="right"
-        app:awv_thumb_edit_left_anchor_image_align_vertical="bottom"
-        app:awv_thumb_edit_right_anchor_image="@drawable/ic_anchor_right"
+        app:awv_thumb_edit_height="140dp"
+        app:awv_thumb_edit_left_anchor_align_horizontal="right"
+        app:awv_thumb_edit_left_anchor_align_vertical="bottom"
+        app:awv_thumb_edit_left_anchor_image="@drawable/ic_anchor_left_cut"
+        app:awv_thumb_edit_right_anchor_align_horizontal="left"
+        app:awv_thumb_edit_right_anchor_image="@drawable/ic_anchor_right_cut"
         app:awv_wave_color="#c3c2f1"
         app:awv_wave_line_padding="2dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:layout_width="wrap_content"
+    <ScrollView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="chooseAudio"
-        android:text="@string/choose_audio"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/audioView" />
+        app:layout_constraintTop_toBottomOf="@id/audioView">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="chooseAudio"
+                android:text="@string/choose_audio" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="4dp"
+                android:background="#ccc" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginLeft="4dp"
+                android:text="@string/current_mode_preview"
+                android:textColor="#f00" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="changeMode"
+                android:text="@string/change_mode"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/audioView" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="4dp"
+                android:background="#ccc" />
+
+        </LinearLayout>
+    </ScrollView>
 
     <LinearLayout
         android:id="@+id/llLoading"

@@ -56,22 +56,22 @@ public class AudioWaveView extends View {
     private Paint paintCenterProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintEditThumb = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    private boolean isShowTimeLineIndicator = true;
-    private float waveLinePadding = 0f;
-    private float waveLineMaxHeight = 0f;
-    private float waveLineWidth = 0f;
-    private float audioBarHeight = 0f;
-    private float timeLineIndicatorHeight = 0f;
-    private float numberSubTimelineIndicator = 3;
+    private boolean isShowTimeLineIndicator = true;  //Có hiển thị các đường kẻ giá trị timeline hay không
+    private float waveLinePadding = 0f; //Khoảng cách giữa cách đường sóng
+    private float waveLineMaxHeight = 0f; // Độ cao lớn nhất của đường sóng
+    private float waveLineWidth = 0f; //Chiều rộng của đường sóng
+    private float audioBarHeight = 0f; //Độ cao của thanh audio
+    private float timeLineIndicatorHeight = 0f; //Độ cao của đường kẻ giá trị timeline
+    private float numberSubTimelineIndicator = 3; //Số lượng các đường kẻ timeline phụ (nhỏ) ở giữa các đường kẻ chính
 
     private PointF pointDown = new PointF();
     private boolean isScrolling = false;
 
-    private Align editThumbAlign;
+    private Align editThumbAlign; //Căn lề để tính vị trí cho đường kẻ thumb edit (top,center,bottom)
     private float editThumbWidth;
     private float editThumbHeight;
 
-    private float waveViewCurrentWidth;
+    private float waveViewCurrentWidth; //Chiều rộng hiện tại của thanh bar chứa đầy đủ đường sóng
     private int touchSlop;
     private boolean isShowRandomPreview = true;
     private float waveZoomLevel = 1f;
@@ -96,6 +96,8 @@ public class AudioWaveView extends View {
     private float minRangeProgress = 0f;
     private ModeEdit modeEdit = ModeEdit.NONE;
 
+    private float anchorImageWidth = 0f;
+    private float anchorImageHeight = 0f;
     private Align leftAnchorAlignVertical = Align.CENTER;
     private Align rightAnchorAlignVertical = Align.CENTER;
     private Align leftAnchorAlignHorizontal = Align.CENTER;
@@ -165,13 +167,11 @@ public class AudioWaveView extends View {
             }
         });
         if (attrs != null) {
-            float density = getResources().getDisplayMetrics().density;
-            eLog("Density: ", density);
             TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.AudioWaveView);
             paintBackground.setColor(ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.TRANSPARENT));
             audioBarHeight = ta.getDimension(R.styleable.AudioWaveView_awv_bar_audio_height, 0f);
 
-            int overlayColor = ta.getColor(R.styleable.AudioWaveView_awv_background_color, getAppColor(R.color.color_background_color));
+            int overlayColor = ta.getColor(R.styleable.AudioWaveView_awv_overlay_color, getAppColor(R.color.color_overlay_color));
             paintOverlay.setColor(overlayColor);
 
             paintWave.setColor(ta.getColor(R.styleable.AudioWaveView_awv_wave_color, Color.BLACK));
@@ -236,13 +236,15 @@ public class AudioWaveView extends View {
             }
 
             int leftAnchorAlignVerticalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_align_vertical, Align.CENTER.value);
-            setLeftAnchorAlignVertical(leftAnchorAlignVerticalInt);
-            int rightAnchorAlignVerticalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_align_vertical, leftAnchorAlignVerticalInt);
-            setRightAnchorAlignVertical(rightAnchorAlignVerticalInt);
+            leftAnchorAlignVertical = getAlignVertical(leftAnchorAlignVerticalInt);
+            int rightAnchorAlignVerticalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_right_anchor_align_vertical, leftAnchorAlignVerticalInt);
+            rightAnchorAlignVertical = getAlignVertical(rightAnchorAlignVerticalInt);
             int leftAnchorAlignHorizontalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_align_horizontal, Align.CENTER.value);
-            setLeftAnchorAlignHorizontal(leftAnchorAlignHorizontalInt);
-            int rightAnchorAlignHorizontalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_align_horizontal, leftAnchorAlignHorizontalInt);
-            setRightAnchorAlignHorizontal(rightAnchorAlignHorizontalInt);
+            leftAnchorAlignHorizontal = getAlignHorizontal(leftAnchorAlignHorizontalInt);
+            int rightAnchorAlignHorizontalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_right_anchor_align_horizontal, leftAnchorAlignHorizontalInt);
+            rightAnchorAlignHorizontal = getAlignHorizontal(rightAnchorAlignHorizontalInt);
+            anchorImageHeight = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_anchor_height, dpToPixel(16));
+            anchorImageWidth = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_anchor_width, dpToPixel(24));
 
             leftAnchorImage = ta.getDrawable(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_image);
             rightAnchorImage = ta.getDrawable(R.styleable.AudioWaveView_awv_thumb_edit_right_anchor_image);
@@ -250,43 +252,23 @@ public class AudioWaveView extends View {
         }
     }
 
-    private void setLeftAnchorAlignVertical(int leftAnchorAlignVerticalInt) {
-        if (leftAnchorAlignVerticalInt == Align.TOP.value) {
-            leftAnchorAlignVertical = Align.TOP;
-        } else if (leftAnchorAlignVerticalInt == Align.BOTTOM.value) {
-            leftAnchorAlignVertical = Align.BOTTOM;
+    private Align getAlignVertical(int alignInt) {
+        if (alignInt == Align.TOP.value) {
+            return Align.TOP;
+        } else if (alignInt == Align.BOTTOM.value) {
+            return Align.BOTTOM;
         } else {
-            leftAnchorAlignVertical = Align.CENTER;
+            return Align.CENTER;
         }
     }
 
-    private void setRightAnchorAlignVertical(int rightAnchorAlignVerticalInt) {
-        if (rightAnchorAlignVerticalInt == Align.TOP.value) {
-            rightAnchorAlignVertical = Align.TOP;
-        } else if (rightAnchorAlignVerticalInt == Align.BOTTOM.value) {
-            rightAnchorAlignVertical = Align.BOTTOM;
+    private Align getAlignHorizontal(int alignInt) {
+        if (alignInt == Align.LEFT.value) {
+            return Align.LEFT;
+        } else if (alignInt == Align.RIGHT.value) {
+            return Align.RIGHT;
         } else {
-            rightAnchorAlignVertical = Align.CENTER;
-        }
-    }
-
-    private void setLeftAnchorAlignHorizontal(int leftAnchorAlignHorizontalInt) {
-        if (leftAnchorAlignHorizontalInt == Align.LEFT.value) {
-            leftAnchorAlignHorizontal = Align.LEFT;
-        } else if (leftAnchorAlignHorizontalInt == Align.RIGHT.value) {
-            leftAnchorAlignHorizontal = Align.RIGHT;
-        } else {
-            leftAnchorAlignHorizontal = Align.CENTER;
-        }
-    }
-
-    private void setRightAnchorAlignHorizontal(int leftAnchorAlignHorizontalInt) {
-        if (leftAnchorAlignHorizontalInt == Align.LEFT.value) {
-            rightAnchorAlignHorizontal = Align.LEFT;
-        } else if (leftAnchorAlignHorizontalInt == Align.RIGHT.value) {
-            rightAnchorAlignHorizontal = Align.RIGHT;
-        } else {
-            rightAnchorAlignHorizontal = Align.CENTER;
+            return Align.CENTER;
         }
     }
 
@@ -331,16 +313,6 @@ public class AudioWaveView extends View {
         } else {
             waveLineMaxHeight -= paintWave.getStrokeWidth();
         }
-
-        rectOverlayCenter.top = rectView.top;
-        rectOverlayCenter.bottom = rectView.bottom;
-
-        rectOverlayLeft.top = rectView.top;
-        rectOverlayLeft.bottom = rectView.bottom;
-
-        rectOverlayRight.top = rectView.top;
-        rectOverlayRight.bottom = rectView.bottom;
-
         if (centerProgressHeight == -1f) {
             centerProgressHeight = rectWave.height();
         }
@@ -350,9 +322,16 @@ public class AudioWaveView extends View {
         calculateCurrentWidthView();
         configureEditThumb();
         validateEditThumbByProgress();
+        configureAnchorImageVertical();
+        configureAnchorImageHorizontal();
+        configureOverlay();
+        validateOverlayByProgress();
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
+    /**
+     * Tính toán vị trí ban đầu của thumb Edit (top, bottom)
+     */
     private void configureEditThumb() {
         if (editThumbHeight == -1) {
             editThumbHeight = rectWave.height();
@@ -369,6 +348,45 @@ public class AudioWaveView extends View {
         }
         rectThumbRight.top = rectThumbLeft.top;
         rectThumbRight.bottom = rectThumbLeft.bottom;
+    }
+
+    /**
+     * Tính toán vị trí ban đầu của anchor image (top,bottom)
+     */
+    private void configureAnchorImageVertical() {
+        configureAnchorImageVertical(rectAnchorLeft, rectThumbLeft, leftAnchorAlignVertical);
+        configureAnchorImageVertical(rectAnchorRight, rectThumbRight, rightAnchorAlignVertical);
+    }
+
+    private void configureAnchorImageVertical(Rect anchorRect, RectF rectThumb, Align align) {
+        if (align == Align.TOP) {
+            anchorRect.top = (int) rectThumb.top;
+        } else if (align == Align.BOTTOM) {
+            anchorRect.top = (int) (rectThumb.bottom - anchorImageHeight);
+        } else { //Center
+            anchorRect.top = (int) (rectThumb.centerY() - anchorImageHeight / 2f);
+        }
+        anchorRect.bottom = (int) (anchorRect.top + anchorImageHeight);
+    }
+
+    /**
+     * Tính toán vị trí của anchor image (left,right)
+     */
+
+    private void configureAnchorImageHorizontal() {
+        configureAnchorImageHorizontal(rectAnchorLeft, rectThumbLeft, leftAnchorAlignHorizontal);
+        configureAnchorImageHorizontal(rectAnchorRight, rectThumbRight, rightAnchorAlignHorizontal);
+    }
+
+    private void configureAnchorImageHorizontal(Rect anchorRect, RectF rectThumb, Align align) {
+        if (align == Align.LEFT) {
+            anchorRect.left = (int) (rectThumb.left - anchorImageWidth);
+        } else if (align == Align.RIGHT) {
+            anchorRect.left = (int) (rectThumb.right);
+        } else { //Center
+            anchorRect.left = (int) (rectThumb.centerX() - anchorImageWidth / 2f);
+        }
+        anchorRect.right = (int) (anchorRect.left + anchorImageWidth);
     }
 
     private void validateEditThumbByProgress() {
@@ -398,7 +416,34 @@ public class AudioWaveView extends View {
         textTimeLineDefaultWidth = rectTimeLine.width();
     }
 
-    //Sound file
+    /**
+     * Tính toán ví trí lớp mờ (overlay)
+     */
+
+    private void configureOverlay() {
+        rectOverlayCenter.top = rectWave.top;
+        rectOverlayCenter.bottom = rectWave.bottom;
+        rectOverlayLeft.top = rectOverlayCenter.top;
+        rectOverlayLeft.bottom = rectOverlayCenter.bottom;
+        rectOverlayRight.top = rectOverlayCenter.top;
+        rectOverlayRight.bottom = rectOverlayCenter.bottom;
+    }
+
+    private void validateOverlayByProgress() {
+        rectOverlayLeft.left = rectWave.left;
+        rectOverlayLeft.right = rectThumbLeft.left;
+
+        rectOverlayRight.left = rectThumbRight.right;
+        rectOverlayRight.right = rectWave.right;
+
+        rectOverlayCenter.left = rectThumbLeft.right;
+        rectOverlayCenter.right = rectThumbRight.left;
+    }
+
+
+    /**
+     * Sound File
+     */
     private SoundFile mSoundFile;
     private int mSampleRate;
     private int mSamplesPerFrame;
@@ -622,11 +667,11 @@ public class AudioWaveView extends View {
         } else if (isShowRandomPreview) {
             drawRandomPreview(canvas);
         }
-
+        drawOverlay(canvas);
         drawTimeLineAndIndicator(canvas);
         if (isThumbProgressVisible)
             drawCenterProgress(canvas);
-        if (isThumbEditVisible) {
+        if (isThumbEditVisible && (modeEdit == ModeEdit.CUT || modeEdit == ModeEdit.TRIM)) {
             drawThumbCut(canvas);
         }
         drawAnchorImage(canvas);
@@ -742,20 +787,18 @@ public class AudioWaveView extends View {
         }
     }
 
-    private float convertProgressToPosition(float progress) {
-        return progress / duration * rectWave.width() + rectWave.left;
-    }
-
-    private float convertPositionToProgress(float pixel) {
-        return pixel / rectWave.width() * duration;
-    }
-
-    private String convertTimeToTimeFormat(float time) {
-        int t = (int) time / 1000;
-        int second = t % 60;
-        int minute = t / 60;
-        DecimalFormat format = new DecimalFormat("00");
-        return format.format(minute) + ":" + format.format(second);
+    /**
+     * Draw overlay
+     */
+    private void drawOverlay(Canvas canvas) {
+        if (modeEdit == ModeEdit.CUT && isThumbEditVisible) {
+            validateOverlayByProgress();
+            canvas.drawRect(rectOverlayLeft, paintOverlay);
+            canvas.drawRect(rectOverlayRight, paintOverlay);
+        } else if (modeEdit == ModeEdit.TRIM && isThumbEditVisible) {
+            validateOverlayByProgress();
+            canvas.drawRect(rectOverlayCenter, paintOverlay);
+        }
     }
 
     /**
@@ -783,6 +826,22 @@ public class AudioWaveView extends View {
             offset += (waveLineWidth + waveLinePadding) * waveZoomLevel;
         }
         waveViewCurrentWidth = offset - (waveLineWidth / 2f + waveLinePadding) * waveZoomLevel;
+    }
+
+    private float convertProgressToPosition(float progress) {
+        return progress / duration * rectWave.width() + rectWave.left;
+    }
+
+    private float convertPositionToProgress(float pixel) {
+        return pixel / rectWave.width() * duration;
+    }
+
+    private String convertTimeToTimeFormat(float time) {
+        int t = (int) time / 1000;
+        int second = t % 60;
+        int minute = t / 60;
+        DecimalFormat format = new DecimalFormat("00");
+        return format.format(minute) + ":" + format.format(second);
     }
 
     @SuppressLint("ClickableViewAccessibility")

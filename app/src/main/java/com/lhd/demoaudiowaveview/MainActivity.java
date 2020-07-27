@@ -153,4 +153,8 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
             tvLoading.setText("Loading " + progress + "%");
         });
     }
+
+    public void changeMode(View view) {
+
+    }
 }

@@ -2,4 +2,6 @@
     <string name="app_name">DemoAudioWaveView</string>
     <string name="choose_audio">Choose audio</string>
     <string name="loading">Loading</string>
+    <string name="change_mode">Change Mode</string>
+    <string name="current_mode_preview">Current Mode: PREVIEW</string>
 </resources>

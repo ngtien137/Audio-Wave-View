@@ -2,6 +2,6 @@
 <resources>
     <color name="color_indicator_timeline_color">#30000000</color>
     <color name="color_indicator_timeline_sub_indicator_color">#15000000</color>
-    <color name="color_background_color">#40000000</color>
+    <color name="color_overlay_color">#40000000</color>
     <color name="color_center_progress_color">#4643D3</color>
 </resources>
