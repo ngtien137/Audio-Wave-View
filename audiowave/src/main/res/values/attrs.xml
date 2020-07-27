@@ -22,8 +22,10 @@
         <attr name="awv_indicator_timeline_sub_indicator_count" format="integer" />
         <attr name="awv_indicator_timeline_sub_indicator_color" format="integer" />
 
-        <attr name="awv_center_progress_size" format="dimension" />
-        <attr name="awv_center_progress_color" format="color" />
+        <attr name="awv_thumb_progress_size" format="dimension" />
+        <attr name="awv_thumb_progress_color" format="color" />
+        <attr name="awv_thumb_progress_height" format="dimension" />
+        <attr name="awv_thumb_progress_visible" format="boolean" />
 
         <attr name="awv_mode_edit" format="enum">
             <enum name="none" value="0" />
@@ -36,5 +38,16 @@
         <attr name="awv_max_progress" format="integer" />
         <attr name="awv_min_progress" format="integer" />
         <attr name="awv_duration" format="integer" />
+
+        <attr name="awv_thumb_edit_background" format="color" />
+        <attr name="awv_thumb_edit_visible" format="boolean" />
+        <attr name="awv_thumb_edit_width" format="dimension" />
+        <attr name="awv_thumb_edit_height" format="dimension" />
+        <attr name="awv_thumb_edit_align" format="enum">
+            <enum name="top" value="0" />
+            <enum name="bottom" value="1" />
+            <enum name="center" value="2" />
+        </attr>
+
     </declare-styleable>
 </resources>

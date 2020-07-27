@@ -12,6 +12,8 @@
         android:layout_height="150dp"
         app:awv_background_color="#edecfb"
         app:awv_bar_audio_height="120dp"
+        app:awv_max_progress="90"
+        app:awv_min_progress="10"
         app:awv_text_timeline_padding_with_bar="4dp"
         app:awv_wave_color="#c3c2f1"
         app:awv_wave_line_padding="2dp"

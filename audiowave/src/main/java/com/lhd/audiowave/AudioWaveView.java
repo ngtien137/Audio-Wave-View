@@ -17,8 +17,10 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewConfiguration;
 
+import androidx.annotation.ColorRes;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 
 import java.io.IOException;
@@ -37,9 +39,9 @@ public class AudioWaveView extends View {
     private RectF rectView = new RectF();
     private RectF rectWave = new RectF();
     private Rect rectTimeLine = new Rect();
-    private Rect rectCenterProgress = new Rect();
-    private Rect rectLeftProgress = new Rect();
-    private Rect rectRightProgress = new Rect();
+    private RectF rectThumbProgress = new RectF();
+    private Rect rectThumbLeft = new Rect();
+    private Rect rectThumbRight = new Rect();
 
     private Paint paintDefault = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintOverlay = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -49,8 +51,7 @@ public class AudioWaveView extends View {
     private Paint paintTimeLineIndicator = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintTimeLineIndicatorSub = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintCenterProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private Paint paintLeftProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private Paint paintRightProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintEditThumb = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private boolean isShowTimeLineIndicator = true;
     private float waveLinePadding = 0f;
@@ -63,6 +64,10 @@ public class AudioWaveView extends View {
     private PointF pointDown = new PointF();
     private boolean isScrolling = false;
 
+    private ThumbAlign editThumbAlign;
+    private float editThumbWidth;
+    private float editThumbHeight;
+
     private float waveViewCurrentWidth;
     private int touchSlop;
     private boolean isShowRandomPreview = true;
@@ -71,6 +76,10 @@ public class AudioWaveView extends View {
     private final float minWaveZoomLevel = 0.5f;
     private int textTimeLineDefaultWidth = 0;
     private float textTimeLinePadding = 0;
+
+    private float centerProgressHeight;
+    private boolean isThumbProgressVisible = true;
+    private boolean isThumbEditVisible = true;
 
 
     private ScaleGestureDetector scaleGestureDetector;
@@ -152,7 +161,7 @@ public class AudioWaveView extends View {
             paintBackground.setColor(ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.TRANSPARENT));
             audioBarHeight = ta.getDimension(R.styleable.AudioWaveView_awv_bar_audio_height, 0f);
 
-            int overlayColor = ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.parseColor("#40000000"));
+            int overlayColor = ta.getColor(R.styleable.AudioWaveView_awv_background_color, getAppColor(R.color.color_background_color));
             paintOverlay.setColor(overlayColor);
 
             paintWave.setColor(ta.getColor(R.styleable.AudioWaveView_awv_wave_color, Color.BLACK));
@@ -176,15 +185,17 @@ public class AudioWaveView extends View {
 
             isShowTimeLineIndicator = ta.getBoolean(R.styleable.AudioWaveView_awv_show_timeline_indicator, true);
             float timeLineIndicatorWidth = ta.getDimension(R.styleable.AudioWaveView_awv_indicator_timeline_width, dpToPixel(0.5f));
-            paintTimeLineIndicator.setColor(ta.getColor(R.styleable.AudioWaveView_awv_indicator_timeline_color, Color.parseColor("#30000000")));
+            paintTimeLineIndicator.setColor(ta.getColor(R.styleable.AudioWaveView_awv_indicator_timeline_color, getAppColor(R.color.color_indicator_timeline_color)));
             paintTimeLineIndicator.setStrokeWidth(timeLineIndicatorWidth);
             timeLineIndicatorHeight = ta.getDimension(R.styleable.AudioWaveView_awv_indicator_timeline_height, dpToPixel(6));
-            paintTimeLineIndicatorSub.setColor(ta.getColor(R.styleable.AudioWaveView_awv_indicator_timeline_sub_indicator_color, Color.parseColor("#15000000")));
+            paintTimeLineIndicatorSub.setColor(ta.getColor(R.styleable.AudioWaveView_awv_indicator_timeline_sub_indicator_color, getAppColor(R.color.color_indicator_timeline_sub_indicator_color)));
             paintTimeLineIndicatorSub.setStrokeWidth(timeLineIndicatorWidth);
             numberSubTimelineIndicator = ta.getInt(R.styleable.AudioWaveView_awv_indicator_timeline_sub_indicator_count, 3);
 
-            paintCenterProgress.setColor(ta.getColor(R.styleable.AudioWaveView_awv_center_progress_color, Color.parseColor("#4643D3")));
-            paintCenterProgress.setStrokeWidth(ta.getDimension(R.styleable.AudioWaveView_awv_center_progress_size, dpToPixel(1)));
+            paintCenterProgress.setColor(ta.getColor(R.styleable.AudioWaveView_awv_thumb_progress_color, getAppColor(R.color.color_center_progress_color)));
+            paintCenterProgress.setStrokeWidth(ta.getDimension(R.styleable.AudioWaveView_awv_thumb_progress_size, dpToPixel(1)));
+            centerProgressHeight = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_progress_height, -1f);
+            isThumbProgressVisible = ta.getBoolean(R.styleable.AudioWaveView_awv_thumb_progress_visible, true);
 
             modeEdit = ModeEdit.NONE;
             int modeInt = ta.getInt(R.styleable.AudioWaveView_awv_mode_edit, ModeEdit.NONE.mode);
@@ -199,10 +210,26 @@ public class AudioWaveView extends View {
             duration = ta.getFloat(R.styleable.AudioWaveView_awv_duration, 100f);
             progress = ta.getFloat(R.styleable.AudioWaveView_awv_progress, 0f);
             leftProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_progress, 0f);
-            rightProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_progress, 100f);
-            rightProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_range_progress, 0f);
+            rightProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_progress, duration);
+            minRangeProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_range_progress, 0f);
+
+            isThumbEditVisible = ta.getBoolean(R.styleable.AudioWaveView_awv_thumb_edit_visible, true);
+            paintEditThumb.setColor(ta.getColor(R.styleable.AudioWaveView_awv_thumb_edit_background, getAppColor(R.color.color_center_progress_color)));
+            editThumbHeight = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_height, -1f);
+            editThumbWidth = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_width, dpToPixel(1));
+            int editThumbAlignValue = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_align, ThumbAlign.CENTER.value);
+            editThumbAlign = ThumbAlign.CENTER;
+            if (editThumbAlignValue == ThumbAlign.TOP.value) {
+                editThumbAlign = ThumbAlign.TOP;
+            } else if (editThumbAlignValue == ThumbAlign.BOTTOM.value) {
+                editThumbAlign = ThumbAlign.BOTTOM;
+            }
             ta.recycle();
         }
+    }
+
+    private int getAppColor(@ColorRes int colorRes) {
+        return ContextCompat.getColor(getContext(), colorRes);
     }
 
     private void adjustZoomLevel(float value) {
@@ -252,8 +279,39 @@ public class AudioWaveView extends View {
         rectOverlayRight.top = rectView.top;
         rectOverlayRight.bottom = rectView.bottom;
 
+        if (centerProgressHeight == -1f) {
+            centerProgressHeight = rectWave.height();
+        }
+        rectThumbProgress.top = rectWave.centerY() - centerProgressHeight / 2f - paintCenterProgress.getStrokeWidth() / 2f;
+        rectThumbProgress.bottom = rectThumbProgress.top + centerProgressHeight;
+        validateRectWithProgress();
         calculateCurrentWidthView();
+        configureEditThumb();
+        validateEditThumbByProgress();
         super.onSizeChanged(w, h, oldw, oldh);
+    }
+
+    private void configureEditThumb() {
+        if (editThumbHeight == -1) {
+            editThumbHeight = rectWave.height();
+        }
+        if (editThumbAlign == ThumbAlign.TOP) {
+            rectThumbLeft.top = (int) rectWave.top;
+            rectThumbLeft.bottom = (int) (rectThumbLeft.top + editThumbHeight);
+        } else if (editThumbAlign == ThumbAlign.BOTTOM) {
+            rectThumbLeft.bottom = (int) rectWave.bottom;
+            rectThumbLeft.top = (int) (rectThumbLeft.bottom - editThumbHeight);
+        } else {
+            rectThumbLeft.top = (int) (rectWave.centerY() - editThumbHeight / 2f);
+            rectThumbLeft.bottom = (int) (rectWave.centerY() - editThumbHeight / 2f);
+        }
+        rectThumbRight.top = rectThumbLeft.top;
+        rectThumbRight.bottom = rectThumbLeft.bottom;
+    }
+
+    private void validateEditThumbByProgress() {
+        validateThumbLeftWithProgress();
+        validateThumbRightWithProgress();
     }
 
     private void loadTextTimelineSizeDefault(String defaultTimeLine) {
@@ -275,6 +333,9 @@ public class AudioWaveView extends View {
 
     private boolean mInitialized;
 
+    /**
+     * Loading sample data of audio
+     */
     private void computeDoublesForAllZoomLevels() {
         int numFrames = mSoundFile.getNumFrames();
         int[] frameGains = mSoundFile.getFrameGains();
@@ -429,8 +490,14 @@ public class AudioWaveView extends View {
             mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
             duration = mSoundFile.getDuration();
             progress = 0f;
-            leftProgress = 0f;
-            rightProgress = duration;
+            if (modeEdit == ModeEdit.TRIM) {
+                leftProgress = duration / 2f - minRangeProgress / 2f;
+                rightProgress = duration / 2f + minRangeProgress / 2f;
+            } else {
+                leftProgress = 0f;
+                rightProgress = duration;
+            }
+            validateEditThumbByProgress();
             computeDoublesForAllZoomLevels();
             computeIntsForThisZoomLevel();
             calculateCurrentWidthView();
@@ -478,6 +545,11 @@ public class AudioWaveView extends View {
         }
 
         drawTimeLineAndIndicator(canvas);
+        if (isThumbProgressVisible)
+            drawCenterProgress(canvas);
+        if (isThumbEditVisible) {
+            drawThumbCut(canvas);
+        }
     }
 
     /**
@@ -563,11 +635,18 @@ public class AudioWaveView extends View {
     }
 
     /**
-     * Draw Center Progress
+     * Draw Thumb
      */
     private void drawCenterProgress(Canvas canvas) {
-
+        canvas.drawLine(rectThumbProgress.left, rectThumbProgress.top, rectThumbProgress.left, rectThumbProgress.bottom, paintCenterProgress);
     }
+
+    private void drawThumbCut(Canvas canvas) {
+        canvas.drawRect(rectThumbLeft, paintEditThumb);
+        canvas.drawRect(rectThumbRight, paintEditThumb);
+    }
+
+    /////
 
     private float convertProgressToPosition(float progress) {
         return progress / duration * rectWave.width() + rectWave.left;
@@ -585,6 +664,26 @@ public class AudioWaveView extends View {
         return format.format(minute) + ":" + format.format(second);
     }
 
+    private void validateRectWithProgress() {
+        rectThumbProgress.left = convertProgressToPosition(progress);
+    }
+
+    private void validateThumbLeftWithProgress() {  
+        validateEditThumbByProgress(rectThumbLeft, leftProgress);
+    }
+
+    private void validateThumbRightWithProgress() { 
+        validateEditThumbByProgress(rectThumbRight, rightProgress);
+    }
+
+    private void validateEditThumbByProgress(Rect thumbRect, Float progress) {
+        thumbRect.left = (int) (convertProgressToPosition(progress) - editThumbWidth / 2f);
+        thumbRect.right = (int) (thumbRect.left + editThumbWidth);
+    }
+
+    /**
+     * Draw preview wave
+     */
     private List<Float> listPreviewWave = new ArrayList<>(); //List fake for show random preview
 
     private void drawRandomPreview(Canvas canvas) {
@@ -673,12 +772,20 @@ public class AudioWaveView extends View {
     }
 
     public enum ModeEdit {
-
         NONE(0), TRIM(2), CUT(1);
         public int mode;
 
         ModeEdit(int mode) {
             this.mode = mode;
+        }
+    }
+
+    public enum ThumbAlign {
+        TOP(0), CENTER(2), BOTTOM(1);
+        public int value;
+
+        ThumbAlign(int mode) {
+            this.value = mode;
         }
     }
 
@@ -702,5 +809,28 @@ public class AudioWaveView extends View {
 
     public void setInteractedListener(IInteractedListener interactedListener) {
         this.interactedListener = interactedListener;
+    }
+
+    public void setProgress(float progress) {
+        this.progress = validateProgress(progress, 0f, duration);
+        postInvalidate();
+    }
+
+    public void setMinProgress(float progress) {
+        leftProgress = validateProgress(progress, 0f, duration);
+        postInvalidate();
+    }
+
+    public void setMaxProgress(float progress) {
+        rightProgress = validateProgress(progress, 0f, duration);
+        postInvalidate();
+    }
+
+    private float validateProgress(float progress, float minProgress, float maxProgress) {
+        if (progress < minProgress)
+            return minProgress;
+        else if (progress > maxProgress)
+            return maxProgress;
+        return progress;
     }
 }
