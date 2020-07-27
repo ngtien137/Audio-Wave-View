@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -40,8 +41,10 @@ public class AudioWaveView extends View {
     private RectF rectWave = new RectF();
     private Rect rectTimeLine = new Rect();
     private RectF rectThumbProgress = new RectF();
-    private Rect rectThumbLeft = new Rect();
-    private Rect rectThumbRight = new Rect();
+    private RectF rectThumbLeft = new RectF();
+    private RectF rectThumbRight = new RectF();
+    private Rect rectAnchorLeft = new Rect();
+    private Rect rectAnchorRight = new Rect();
 
     private Paint paintDefault = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintOverlay = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -64,7 +67,7 @@ public class AudioWaveView extends View {
     private PointF pointDown = new PointF();
     private boolean isScrolling = false;
 
-    private ThumbAlign editThumbAlign;
+    private Align editThumbAlign;
     private float editThumbWidth;
     private float editThumbHeight;
 
@@ -92,6 +95,13 @@ public class AudioWaveView extends View {
     private float rightProgress = 0f;
     private float minRangeProgress = 0f;
     private ModeEdit modeEdit = ModeEdit.NONE;
+
+    private Align leftAnchorAlignVertical = Align.CENTER;
+    private Align rightAnchorAlignVertical = Align.CENTER;
+    private Align leftAnchorAlignHorizontal = Align.CENTER;
+    private Align rightAnchorAlignHorizontal = Align.CENTER;
+    private Drawable leftAnchorImage;
+    private Drawable rightAnchorImage;
 
     public AudioWaveView(Context context) {
         super(context);
@@ -210,21 +220,73 @@ public class AudioWaveView extends View {
             duration = ta.getFloat(R.styleable.AudioWaveView_awv_duration, 100f);
             progress = ta.getFloat(R.styleable.AudioWaveView_awv_progress, 0f);
             leftProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_progress, 0f);
-            rightProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_progress, duration);
+            rightProgress = ta.getFloat(R.styleable.AudioWaveView_awv_max_progress, duration);
             minRangeProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_range_progress, 0f);
 
             isThumbEditVisible = ta.getBoolean(R.styleable.AudioWaveView_awv_thumb_edit_visible, true);
             paintEditThumb.setColor(ta.getColor(R.styleable.AudioWaveView_awv_thumb_edit_background, getAppColor(R.color.color_center_progress_color)));
             editThumbHeight = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_height, -1f);
             editThumbWidth = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_width, dpToPixel(1));
-            int editThumbAlignValue = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_align, ThumbAlign.CENTER.value);
-            editThumbAlign = ThumbAlign.CENTER;
-            if (editThumbAlignValue == ThumbAlign.TOP.value) {
-                editThumbAlign = ThumbAlign.TOP;
-            } else if (editThumbAlignValue == ThumbAlign.BOTTOM.value) {
-                editThumbAlign = ThumbAlign.BOTTOM;
+            int editThumbAlignValue = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_align, Align.CENTER.value);
+            editThumbAlign = Align.CENTER;
+            if (editThumbAlignValue == Align.TOP.value) {
+                editThumbAlign = Align.TOP;
+            } else if (editThumbAlignValue == Align.BOTTOM.value) {
+                editThumbAlign = Align.BOTTOM;
             }
+
+            int leftAnchorAlignVerticalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_align_vertical, Align.CENTER.value);
+            setLeftAnchorAlignVertical(leftAnchorAlignVerticalInt);
+            int rightAnchorAlignVerticalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_align_vertical, leftAnchorAlignVerticalInt);
+            setRightAnchorAlignVertical(rightAnchorAlignVerticalInt);
+            int leftAnchorAlignHorizontalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_align_horizontal, Align.CENTER.value);
+            setLeftAnchorAlignHorizontal(leftAnchorAlignHorizontalInt);
+            int rightAnchorAlignHorizontalInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_align_horizontal, leftAnchorAlignHorizontalInt);
+            setRightAnchorAlignHorizontal(rightAnchorAlignHorizontalInt);
+
+            leftAnchorImage = ta.getDrawable(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_image);
+            rightAnchorImage = ta.getDrawable(R.styleable.AudioWaveView_awv_thumb_edit_right_anchor_image);
             ta.recycle();
+        }
+    }
+
+    private void setLeftAnchorAlignVertical(int leftAnchorAlignVerticalInt) {
+        if (leftAnchorAlignVerticalInt == Align.TOP.value) {
+            leftAnchorAlignVertical = Align.TOP;
+        } else if (leftAnchorAlignVerticalInt == Align.BOTTOM.value) {
+            leftAnchorAlignVertical = Align.BOTTOM;
+        } else {
+            leftAnchorAlignVertical = Align.CENTER;
+        }
+    }
+
+    private void setRightAnchorAlignVertical(int rightAnchorAlignVerticalInt) {
+        if (rightAnchorAlignVerticalInt == Align.TOP.value) {
+            rightAnchorAlignVertical = Align.TOP;
+        } else if (rightAnchorAlignVerticalInt == Align.BOTTOM.value) {
+            rightAnchorAlignVertical = Align.BOTTOM;
+        } else {
+            rightAnchorAlignVertical = Align.CENTER;
+        }
+    }
+
+    private void setLeftAnchorAlignHorizontal(int leftAnchorAlignHorizontalInt) {
+        if (leftAnchorAlignHorizontalInt == Align.LEFT.value) {
+            leftAnchorAlignHorizontal = Align.LEFT;
+        } else if (leftAnchorAlignHorizontalInt == Align.RIGHT.value) {
+            leftAnchorAlignHorizontal = Align.RIGHT;
+        } else {
+            leftAnchorAlignHorizontal = Align.CENTER;
+        }
+    }
+
+    private void setRightAnchorAlignHorizontal(int leftAnchorAlignHorizontalInt) {
+        if (leftAnchorAlignHorizontalInt == Align.LEFT.value) {
+            rightAnchorAlignHorizontal = Align.LEFT;
+        } else if (leftAnchorAlignHorizontalInt == Align.RIGHT.value) {
+            rightAnchorAlignHorizontal = Align.RIGHT;
+        } else {
+            rightAnchorAlignHorizontal = Align.CENTER;
         }
     }
 
@@ -284,7 +346,7 @@ public class AudioWaveView extends View {
         }
         rectThumbProgress.top = rectWave.centerY() - centerProgressHeight / 2f - paintCenterProgress.getStrokeWidth() / 2f;
         rectThumbProgress.bottom = rectThumbProgress.top + centerProgressHeight;
-        validateRectWithProgress();
+        validateThumbProgressWithProgress();
         calculateCurrentWidthView();
         configureEditThumb();
         validateEditThumbByProgress();
@@ -295,15 +357,15 @@ public class AudioWaveView extends View {
         if (editThumbHeight == -1) {
             editThumbHeight = rectWave.height();
         }
-        if (editThumbAlign == ThumbAlign.TOP) {
-            rectThumbLeft.top = (int) rectWave.top;
-            rectThumbLeft.bottom = (int) (rectThumbLeft.top + editThumbHeight);
-        } else if (editThumbAlign == ThumbAlign.BOTTOM) {
-            rectThumbLeft.bottom = (int) rectWave.bottom;
-            rectThumbLeft.top = (int) (rectThumbLeft.bottom - editThumbHeight);
+        if (editThumbAlign == Align.TOP) {
+            rectThumbLeft.top = rectWave.top;
+            rectThumbLeft.bottom = (rectThumbLeft.top + editThumbHeight);
+        } else if (editThumbAlign == Align.BOTTOM) {
+            rectThumbLeft.bottom = rectWave.bottom;
+            rectThumbLeft.top = (rectThumbLeft.bottom - editThumbHeight);
         } else {
-            rectThumbLeft.top = (int) (rectWave.centerY() - editThumbHeight / 2f);
-            rectThumbLeft.bottom = (int) (rectWave.centerY() - editThumbHeight / 2f);
+            rectThumbLeft.top = (rectWave.centerY() - editThumbHeight / 2f);
+            rectThumbLeft.bottom = (rectWave.centerY() + editThumbHeight / 2f);
         }
         rectThumbRight.top = rectThumbLeft.top;
         rectThumbRight.bottom = rectThumbLeft.bottom;
@@ -312,6 +374,23 @@ public class AudioWaveView extends View {
     private void validateEditThumbByProgress() {
         validateThumbLeftWithProgress();
         validateThumbRightWithProgress();
+    }
+
+    private void validateThumbProgressWithProgress() {
+        rectThumbProgress.left = convertProgressToPosition(progress);
+    }
+
+    private void validateThumbLeftWithProgress() {
+        validateEditThumbByProgress(rectThumbLeft, leftProgress);
+    }
+
+    private void validateThumbRightWithProgress() {
+        validateEditThumbByProgress(rectThumbRight, rightProgress);
+    }
+
+    private void validateEditThumbByProgress(RectF thumbRect, Float progress) {
+        thumbRect.left = (int) (convertProgressToPosition(progress) - editThumbWidth / 2f);
+        thumbRect.right = (int) (thumbRect.left + editThumbWidth);
     }
 
     private void loadTextTimelineSizeDefault(String defaultTimeLine) {
@@ -550,6 +629,8 @@ public class AudioWaveView extends View {
         if (isThumbEditVisible) {
             drawThumbCut(canvas);
         }
+        drawAnchorImage(canvas);
+
     }
 
     /**
@@ -646,7 +727,20 @@ public class AudioWaveView extends View {
         canvas.drawRect(rectThumbRight, paintEditThumb);
     }
 
-    /////
+    /**
+     * Draw anchor image
+     */
+
+    private void drawAnchorImage(Canvas canvas) {
+        if (leftAnchorImage != null) {
+            leftAnchorImage.setBounds(rectAnchorLeft);
+            leftAnchorImage.draw(canvas);
+        }
+        if (rightAnchorImage != null) {
+            rightAnchorImage.setBounds(rectAnchorRight);
+            rightAnchorImage.draw(canvas);
+        }
+    }
 
     private float convertProgressToPosition(float progress) {
         return progress / duration * rectWave.width() + rectWave.left;
@@ -662,23 +756,6 @@ public class AudioWaveView extends View {
         int minute = t / 60;
         DecimalFormat format = new DecimalFormat("00");
         return format.format(minute) + ":" + format.format(second);
-    }
-
-    private void validateRectWithProgress() {
-        rectThumbProgress.left = convertProgressToPosition(progress);
-    }
-
-    private void validateThumbLeftWithProgress() {  
-        validateEditThumbByProgress(rectThumbLeft, leftProgress);
-    }
-
-    private void validateThumbRightWithProgress() { 
-        validateEditThumbByProgress(rectThumbRight, rightProgress);
-    }
-
-    private void validateEditThumbByProgress(Rect thumbRect, Float progress) {
-        thumbRect.left = (int) (convertProgressToPosition(progress) - editThumbWidth / 2f);
-        thumbRect.right = (int) (thumbRect.left + editThumbWidth);
     }
 
     /**
@@ -780,11 +857,11 @@ public class AudioWaveView extends View {
         }
     }
 
-    public enum ThumbAlign {
-        TOP(0), CENTER(2), BOTTOM(1);
+    public enum Align {
+        TOP(0), CENTER(2), BOTTOM(1), LEFT(3), RIGHT(4);
         public int value;
 
-        ThumbAlign(int mode) {
+        Align(int mode) {
             this.value = mode;
         }
     }

@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipChildren="false"
     tools:context=".MainActivity">
 
     <com.lhd.audiowave.AudioWaveView
@@ -15,6 +16,12 @@
         app:awv_max_progress="90"
         app:awv_min_progress="10"
         app:awv_text_timeline_padding_with_bar="4dp"
+        app:awv_thumb_edit_align="top"
+        app:awv_thumb_edit_height="130dp"
+        app:awv_thumb_edit_left_anchor_image="@drawable/ic_anchor_left"
+        app:awv_thumb_edit_left_anchor_image_align_horizontal="right"
+        app:awv_thumb_edit_left_anchor_image_align_vertical="bottom"
+        app:awv_thumb_edit_right_anchor_image="@drawable/ic_anchor_right"
         app:awv_wave_color="#c3c2f1"
         app:awv_wave_line_padding="2dp"
         app:layout_constraintBottom_toBottomOf="parent"

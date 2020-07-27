@@ -48,6 +48,21 @@
             <enum name="bottom" value="1" />
             <enum name="center" value="2" />
         </attr>
+        <attr name="awv_thumb_edit_left_anchor_align_horizontal">
+            <flag name="center" value="2" />
+            <flag name="left" value="3" />
+            <flag name="right" value="4" />
+        </attr>
+        <attr name="awv_thumb_edit_left_anchor_align_vertical">
+            <flag name="top" value="0" />
+            <flag name="bottom" value="1" />
+            <flag name="center" value="2" />
+        </attr>
+
+        <attr name="awv_thumb_edit_left_anchor_image" format="reference" />
+        <attr name="awv_thumb_edit_right_anchor_image" format="reference" />
+        <attr name="awv_thumb_edit_anchor_width" format="dimension" />
+        <attr name="awv_thumb_edit_anchor_height" format="dimension" />
 
     </declare-styleable>
 </resources>
