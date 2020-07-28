@@ -79,8 +79,8 @@ public class AudioWaveView extends View {
     private int touchSlop;
     private boolean isShowRandomPreview = true;
     private float waveZoomLevel = 1f;
-    private final float maxWaveZoomLevel = 5f;
-    private final float minWaveZoomLevel = 0.5f;
+    private float maxWaveZoomLevel = 5f;
+    private float minWaveZoomLevel = 0.5f;
     private int textTimeLineDefaultWidth = 0;
     private float textTimeLinePadding = 0;
 
@@ -160,14 +160,14 @@ public class AudioWaveView extends View {
                     currentScaleSpanX = scaleGestureDetector.getCurrentSpanX();
                     adjustWaveByZoomLevel();
                     calculateCurrentWidthView();
+                    float minProgress = convertPositionToProgress(rectThumbLeft.centerX());
+                    float maxProgress = convertPositionToProgress(rectThumbRight.centerX());
+                    if (maxProgress > duration) {
+                        maxProgress = duration;
+                        validateThumbRightWithProgress();
+                    }
                     if (interactedListener != null) {
                         interactedListener.onAudioBarScaling();
-                        float minProgress = convertPositionToProgress(rectThumbLeft.centerX());
-                        float maxProgress = convertPositionToProgress(rectThumbRight.centerX());
-                        if (maxProgress > duration) {
-                            maxProgress = duration;
-                            validateThumbRightWithProgress();
-                        }
                         interactedListener.onRangerChanging(minProgress, maxProgress, AdjustMode.SCALE);
                     }
                     invalidate();
@@ -212,6 +212,8 @@ public class AudioWaveView extends View {
             paintWave.setStrokeCap(Paint.Cap.ROUND);
             waveLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_padding, waveLineWidth / 10f);
             waveLineMaxHeight = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_max_height, 0f);
+            minWaveZoomLevel = ta.getFloat(R.styleable.AudioWaveView_awv_wave_zoom_min_level, 0.5f);
+            maxWaveZoomLevel = ta.getFloat(R.styleable.AudioWaveView_awv_wave_zoom_max_level, 5f);
 
             textTimeLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_padding_with_bar, 0f);
             paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, Color.parseColor("#45000000")));
