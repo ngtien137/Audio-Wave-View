@@ -1,5 +1,7 @@
 # Audio Wave View
 Audio Sample View
+## Preview 
+![alt text](https://github.com/ngtien137/Audio-Wave-View/blob/master/images/preview.png) 
 ## Getting Started
 ### Configure build.gradle (Project)
 * Add these lines:
