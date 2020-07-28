@@ -111,6 +111,10 @@ public class AudioWaveView extends View {
     private Drawable leftAnchorImage;
     private Drawable rightAnchorImage;
 
+    private boolean isMovingThumb;
+    private int lastFocusThumbIndex = ThumbIndex.THUMB_NONE;
+    private int thumbIndex = ThumbIndex.THUMB_NONE;
+
     private GestureDetector gestureDetector;
     private Scroller scroller;
 
@@ -900,9 +904,7 @@ public class AudioWaveView extends View {
         }
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                if (!scroller.isFinished()) {
-                    scroller.forceFinished(true);
-                }
+                stopFling();
                 if (interactedListener != null) {
                     interactedListener.onTouchDownAudioBar();
                 }
@@ -959,10 +961,6 @@ public class AudioWaveView extends View {
             scrollBy(-disX, 0);
 
     }
-
-    private boolean isMovingThumb;
-    private int lastFocusThumbIndex = ThumbIndex.THUMB_NONE;
-    private int thumbIndex = ThumbIndex.THUMB_NONE;
 
     private void moveThumb(float distance) {
         int disMove = (int) distance;
@@ -1231,6 +1229,12 @@ public class AudioWaveView extends View {
 
     public float getMaxProgress() {
         return rightProgress;
+    }
+
+    public void stopFling() {
+        if (!scroller.isFinished()) {
+            scroller.forceFinished(true);
+        }
     }
 
 }
