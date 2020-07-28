@@ -10,6 +10,8 @@
         <attr name="awv_wave_line_size" format="dimension" />
         <attr name="awv_wave_line_max_height" format="dimension" />
         <attr name="awv_wave_line_padding" format="dimension" />
+        <attr name="awv_wave_zoom_min_level" format="float" />
+        <attr name="awv_wave_zoom_max_level" format="float" />
 
         <attr name="awv_text_timeline_color" format="color" />
         <attr name="awv_text_timeline_size" format="dimension" />

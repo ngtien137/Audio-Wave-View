@@ -1231,6 +1231,10 @@ public class AudioWaveView extends View {
         return rightProgress;
     }
 
+    public float getMinRangeProgress() {
+        return minRangeProgress;
+    }
+
     public void stopFling() {
         if (!scroller.isFinished()) {
             scroller.forceFinished(true);
