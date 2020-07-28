@@ -48,7 +48,7 @@
             <enum name="bottom" value="1" />
             <enum name="center" value="2" />
         </attr>
-        <attr name="awv_thumb_edit_left_anchor_align_horizontal" >
+        <attr name="awv_thumb_edit_left_anchor_align_horizontal">
             <enum name="center" value="2" />
             <enum name="left" value="3" />
             <enum name="right" value="4" />
@@ -74,6 +74,7 @@
         <attr name="awv_thumb_edit_anchor_width" format="dimension" />
         <attr name="awv_thumb_edit_anchor_height" format="dimension" />
         <attr name="awv_thumb_touch_expand_size" format="dimension" />
+        <attr name="awv_fixed_thumb_progress_by_thumb_edit" format="boolean" />
 
     </declare-styleable>
 </resources>

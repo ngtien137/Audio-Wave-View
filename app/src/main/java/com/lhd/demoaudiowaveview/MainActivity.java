@@ -16,8 +16,10 @@ import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.lhd.audiowave.AudioWaveView;
 
@@ -39,6 +41,10 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
     private AudioWaveView audioWaveView;
     private LinearLayout llLoading;
     private TextView tvLoading;
+    private TextView tvMode;
+    private EditText edtMin;
+    private EditText edtProgress;
+    private EditText edtMax;
     private SimpleRxTask simpleRxTask;
 
     @Override
@@ -56,10 +62,36 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
         audioWaveView = findViewById(R.id.audioView);
         llLoading = findViewById(R.id.llLoading);
         tvLoading = findViewById(R.id.tvLoading);
+        tvMode = findViewById(R.id.tvMode);
+        edtProgress = findViewById(R.id.edtProgress);
+        edtMin = findViewById(R.id.edtMin);
+        edtMax = findViewById(R.id.edtMax);
         audioWaveView.setAudioListener(this);
         if (!checkPermission()) {
             grantPermission();
         }
+        audioWaveView.setInteractedListener(new AudioWaveView.IInteractedListener() {
+
+            @Override
+            public void onTouchDownAudioBar() {
+
+            }
+
+            @Override
+            public void onTouchReleaseAudioBar() {
+
+            }
+
+            @Override
+            public void onAudioBarScaling() {
+
+            }
+
+            @Override
+            public void onRangerChanging(float minProgress, float maxProgress, AudioWaveView.AdjustMode adjustMode) {
+                eLog("RangeChanging: Range[", minProgress, ",", maxProgress, "], AdjustMode:", adjustMode);
+            }
+        });
     }
 
     private boolean checkPermission() {
@@ -154,7 +186,34 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
         });
     }
 
+    @SuppressLint("SetTextI18n")
     public void changeMode(View view) {
+        if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.NONE) {
+            audioWaveView.setModeEdit(AudioWaveView.ModeEdit.CUT);
+        } else if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.CUT) {
+            audioWaveView.setModeEdit(AudioWaveView.ModeEdit.TRIM);
+        } else if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.TRIM) {
+            audioWaveView.setModeEdit(AudioWaveView.ModeEdit.NONE);
+        }
+        tvMode.setText("Mode: " + audioWaveView.getModeEdit());
+    }
 
+    public void applyRange(View view) {
+        try {
+            float minValue = Float.parseFloat(edtMin.getText().toString());
+            float maxValue = Float.parseFloat(edtMax.getText().toString());
+            audioWaveView.setRangeProgress(minValue, maxValue);
+        } catch (Exception e) {
+            Toast.makeText(this, "Invalid value", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void setProgress(View view) {
+        try {
+            float progress = Float.parseFloat(edtProgress.getText().toString());
+            audioWaveView.setProgress(progress);
+        } catch (Exception e) {
+            Toast.makeText(this, "Invalid value", Toast.LENGTH_SHORT).show();
+        }
     }
 }
