@@ -1,5 +1,6 @@
 package com.lhd.demoaudiowaveview;
 
+import androidx.annotation.DrawableRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.loader.content.CursorLoader;
@@ -9,6 +10,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -22,16 +24,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lhd.audiowave.AudioWaveView;
-
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.annotations.NonNull;
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.CompletableEmitter;
-import io.reactivex.rxjava3.core.CompletableObserver;
-import io.reactivex.rxjava3.core.CompletableOnSubscribe;
-import io.reactivex.rxjava3.core.Scheduler;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import static com.lhd.audiowave.AudioWaveView.ENABLE_LOG;
 
@@ -190,8 +182,12 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
     public void changeMode(View view) {
         if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.NONE) {
             audioWaveView.setModeEdit(AudioWaveView.ModeEdit.CUT);
+            audioWaveView.setLeftAnchorAlignImage(getAppDrawable(R.drawable.ic_anchor_left_cut), AudioWaveView.Align.RIGHT, AudioWaveView.Align.BOTTOM);
+            audioWaveView.setRightAnchorAlignImage(getAppDrawable(R.drawable.ic_anchor_right_cut), AudioWaveView.Align.LEFT, AudioWaveView.Align.BOTTOM);
         } else if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.CUT) {
             audioWaveView.setModeEdit(AudioWaveView.ModeEdit.TRIM);
+            audioWaveView.setLeftAnchorAlignImage(getAppDrawable(R.drawable.ic_anchor_left_trim), AudioWaveView.Align.LEFT, AudioWaveView.Align.BOTTOM);
+            audioWaveView.setRightAnchorAlignImage(getAppDrawable(R.drawable.ic_anchor_right_trim), AudioWaveView.Align.RIGHT, AudioWaveView.Align.BOTTOM);
         } else if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.TRIM) {
             audioWaveView.setModeEdit(AudioWaveView.ModeEdit.NONE);
         }
@@ -216,4 +212,10 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
             Toast.makeText(this, "Invalid value", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private Drawable getAppDrawable(@DrawableRes int id) {
+        return ContextCompat.getDrawable(this, id);
+    }
+
+
 }

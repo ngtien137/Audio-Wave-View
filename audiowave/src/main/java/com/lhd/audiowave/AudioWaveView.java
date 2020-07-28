@@ -1237,4 +1237,22 @@ public class AudioWaveView extends View {
         }
     }
 
+    public void setLeftAnchorAlignImage(Drawable drawable, Align anchorAlignHorizontal, Align anchorAlignVertical) {
+        this.leftAnchorImage = drawable;
+        leftAnchorAlignHorizontal = anchorAlignHorizontal;
+        leftAnchorAlignVertical = anchorAlignVertical;
+        configureAnchorImageHorizontal(rectAnchorLeft, rectThumbLeft, leftAnchorAlignHorizontal);
+        configureAnchorImageVertical(rectAnchorLeft, rectThumbLeft, leftAnchorAlignVertical);
+        postInvalidate();
+    }
+
+    public void setRightAnchorAlignImage(Drawable drawable, Align anchorAlignHorizontal, Align anchorAlignVertical) {
+        this.rightAnchorImage = drawable;
+        rightAnchorAlignHorizontal = anchorAlignHorizontal;
+        rightAnchorAlignVertical = anchorAlignVertical;
+        configureAnchorImageHorizontal(rectAnchorRight, rectThumbRight, rightAnchorAlignHorizontal);
+        configureAnchorImageVertical(rectAnchorRight, rectThumbRight, rightAnchorAlignVertical);
+        postInvalidate();
+    }
+
 }
