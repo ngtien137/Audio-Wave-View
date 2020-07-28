@@ -13,10 +13,13 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.animation.LinearInterpolator;
+import android.widget.Scroller;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.Nullable;
@@ -39,6 +42,7 @@ public class AudioWaveView extends View {
     private RectF rectOverlayRight = new RectF();
     private RectF rectView = new RectF();
     private RectF rectWave = new RectF();
+    private RectF rectBackground = new RectF();
     private Rect rectTimeLine = new Rect();
     private RectF rectThumbProgress = new RectF();
     private RectF rectThumbLeft = new RectF();
@@ -107,6 +111,9 @@ public class AudioWaveView extends View {
     private Drawable leftAnchorImage;
     private Drawable rightAnchorImage;
 
+    private GestureDetector gestureDetector;
+    private Scroller scroller;
+
     public AudioWaveView(Context context) {
         super(context);
         initView(context, null);
@@ -153,6 +160,10 @@ public class AudioWaveView extends View {
                         interactedListener.onAudioBarScaling();
                         float minProgress = convertPositionToProgress(rectThumbLeft.centerX());
                         float maxProgress = convertPositionToProgress(rectThumbRight.centerX());
+                        if (maxProgress > duration) {
+                            maxProgress = duration;
+                            validateThumbRightWithProgress();
+                        }
                         interactedListener.onRangerChanging(minProgress, maxProgress, AdjustMode.SCALE);
                     }
                     invalidate();
@@ -172,6 +183,17 @@ public class AudioWaveView extends View {
                 //eLog("Scale End");
             }
         });
+
+        scroller = new Scroller(context, new LinearInterpolator());
+        gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                scroller.fling(getScrollX(), getScrollY(), (int) (-velocityX), 0, 0, (int) waveViewCurrentWidth - getWidth(), 0, getHeight());
+                invalidate();
+                return true;
+            }
+        });
+
         if (attrs != null) {
             TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.AudioWaveView);
             paintBackground.setColor(ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.TRANSPARENT));
@@ -315,6 +337,7 @@ public class AudioWaveView extends View {
         loadTextTimelineSizeDefault("00:00");
         //
         rectWave.set(rectView.left, rectView.centerY() - audioBarHeight / 2f, rectView.right, rectView.centerY() + audioBarHeight / 2f);
+        rectBackground.set(rectWave);
 
         if (waveLineMaxHeight == 0f) {
             waveLineMaxHeight = rectWave.height() - paintWave.getStrokeWidth(); //Phải trừ đi stroke width vì khi có stroke width thì đường vẽ bị to ra 1 nửa strokeWidth mỗi bên, trên, dưới
@@ -443,6 +466,9 @@ public class AudioWaveView extends View {
 
         rectOverlayRight.left = rectThumbRight.right;
         rectOverlayRight.right = rectWave.right;
+        if (rectOverlayRight.right < rectView.right) {
+            rectOverlayRight.right = rectView.right;
+        }
 
         rectOverlayCenter.left = rectThumbLeft.right;
         rectOverlayCenter.right = rectThumbRight.left;
@@ -629,10 +655,10 @@ public class AudioWaveView extends View {
                 leftProgress = 0f;
                 rightProgress = duration;
             }
-            validateEditThumbByProgress();
             computeDoublesForAllZoomLevels();
             computeIntsForThisZoomLevel();
             calculateCurrentWidthView();
+            validateEditThumbByProgress();
             postInvalidate();
         } catch (IOException e) {
             e.printStackTrace();
@@ -654,15 +680,21 @@ public class AudioWaveView extends View {
 
     private void calculateCurrentWidthView() {
         if (mHeightsAtThisZoomLevel == null || mHeightsAtThisZoomLevel.length == 0) {
-            waveViewCurrentWidth = getWidth();
+            if (isShowRandomPreview && !listPreviewWave.isEmpty()) {
+                waveViewCurrentWidth = (listPreviewWave.size() * waveLineWidth + (listPreviewWave.size() - 1) * waveLinePadding) * waveZoomLevel;
+            } else {
+                waveViewCurrentWidth = getWidth();
+            }
         } else {
             waveViewCurrentWidth = (mHeightsAtThisZoomLevel.length * waveLineWidth + (mHeightsAtThisZoomLevel.length - 1) * waveLinePadding) * waveZoomLevel;
         }
         rectWave.right = rectView.left + waveViewCurrentWidth;
+        rectBackground.right = rectView.right;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
+        canvas.drawRect(rectBackground, paintBackground);
         canvas.drawRect(rectWave, paintBackground);
 
         if (hasSoundFile()) {
@@ -684,7 +716,9 @@ public class AudioWaveView extends View {
             configureAnchorImageHorizontal();
             drawAnchorImage(canvas);
         }
-
+        if (scroller.computeScrollOffset()) {
+            scrollTo(scroller.getCurrX(), getScrollY());
+        }
     }
 
     /**
@@ -861,8 +895,14 @@ public class AudioWaveView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         scaleGestureDetector.onTouchEvent(event);
+        if (gestureDetector.onTouchEvent(event)) {
+            return true;
+        }
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                if (!scroller.isFinished()) {
+                    scroller.forceFinished(true);
+                }
                 if (interactedListener != null) {
                     interactedListener.onTouchDownAudioBar();
                 }
