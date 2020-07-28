@@ -81,7 +81,17 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
 
             @Override
             public void onRangerChanging(float minProgress, float maxProgress, AudioWaveView.AdjustMode adjustMode) {
-                eLog("RangeChanging: Range[", minProgress, ",", maxProgress, "], AdjustMode:", adjustMode);
+                //eLog("RangeChanging: Range[", minProgress, ",", maxProgress, "], AdjustMode:", adjustMode);
+            }
+
+            @Override
+            public void onStopFling(boolean isForcedStop) {
+                eLog("Stop Fling - ByForce: ", isForcedStop);
+            }
+
+            @Override
+            public void onStartFling() {
+                eLog("OnStart Fling");
             }
         });
     }

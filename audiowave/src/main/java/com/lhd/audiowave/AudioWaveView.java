@@ -114,6 +114,7 @@ public class AudioWaveView extends View {
     private boolean isMovingThumb;
     private int lastFocusThumbIndex = ThumbIndex.THUMB_NONE;
     private int thumbIndex = ThumbIndex.THUMB_NONE;
+    private boolean isFlinging = false;
 
     private GestureDetector gestureDetector;
     private Scroller scroller;
@@ -192,6 +193,10 @@ public class AudioWaveView extends View {
         gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                isFlinging = true;
+                if (interactedListener != null) {
+                    interactedListener.onStartFling();
+                }
                 scroller.fling(getScrollX(), getScrollY(), (int) (-velocityX), 0, 0, (int) waveViewCurrentWidth - getWidth(), 0, getHeight());
                 invalidate();
                 return true;
@@ -722,9 +727,16 @@ public class AudioWaveView extends View {
             configureAnchorImageHorizontal();
             drawAnchorImage(canvas);
         }
-        if (scroller.computeScrollOffset()) {
-            scrollTo(scroller.getCurrX(), getScrollY());
+        if (isFlinging) {
+            if (scroller.computeScrollOffset()) {
+                scrollTo(scroller.getCurrX(), getScrollY());
+            }
+            if (interactedListener != null && scroller.isFinished()) {
+                isFlinging = false;
+                interactedListener.onStopFling(false);
+            }
         }
+
     }
 
     /**
@@ -1078,6 +1090,10 @@ public class AudioWaveView extends View {
         void onAudioBarScaling();
 
         void onRangerChanging(float minProgress, float maxProgress, AdjustMode adjustMode);
+
+        void onStopFling(boolean isForcedStop);
+
+        void onStartFling();
     }
 
     public abstract static class SimpleInteractedListener implements IInteractedListener {
@@ -1095,6 +1111,14 @@ public class AudioWaveView extends View {
 
         @Override
         public void onRangerChanging(float minProgress, float maxProgress, AdjustMode adjustMode) {
+        }
+
+        @Override
+        public void onStopFling(boolean isForcedStop) {
+        }
+
+        @Override
+        public void onStartFling() {
         }
     }
 
@@ -1237,7 +1261,17 @@ public class AudioWaveView extends View {
         return minRangeProgress;
     }
 
+    public boolean isFlinging() {
+        return isFlinging;
+    }
+
     public void stopFling() {
+        if (isFlinging) {
+            isFlinging = false;
+            if (interactedListener != null) {
+                interactedListener.onStopFling(true);
+            }
+        }
         if (!scroller.isFinished()) {
             scroller.forceFinished(true);
         }
