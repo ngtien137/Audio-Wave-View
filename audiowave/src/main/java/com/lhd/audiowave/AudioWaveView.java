@@ -889,15 +889,15 @@ public class AudioWaveView extends View {
         waveViewCurrentWidth = offset - (waveLineWidth / 2f + waveLinePadding) * waveZoomLevel;
     }
 
-    private float convertProgressToPosition(float progress) {
+    public float convertProgressToPosition(float progress) {
         return progress / duration * rectWave.width() + rectWave.left;
     }
 
-    private float convertPositionToProgress(float pixel) {
+    public float convertPositionToProgress(float pixel) {
         return pixel / rectWave.width() * duration;
     }
 
-    private float convertProgressPixelSize(float progress) {
+    public float convertProgressPixelSize(float progress) {
         return progress / duration * rectWave.width();
     }
 
