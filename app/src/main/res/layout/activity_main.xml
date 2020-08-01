@@ -9,7 +9,7 @@
     <com.lhd.audiowave.AudioWaveView
         android:id="@+id/audioView"
         android:layout_width="match_parent"
-        android:layout_height="160dp"
+        android:layout_height="180dp"
         app:awv_background_color="#edecfb"
         app:awv_bar_audio_height="120dp"
         app:awv_max_progress="90"
@@ -25,6 +25,7 @@
         app:awv_thumb_edit_right_anchor_image="@drawable/ic_anchor_right_cut"
         app:awv_wave_color="#c3c2f1"
         app:awv_wave_line_padding="2dp"
+        app:awv_thumb_edit_text_value_position="bottom_of_anchor"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

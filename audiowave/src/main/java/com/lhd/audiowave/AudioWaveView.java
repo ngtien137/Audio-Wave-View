@@ -49,6 +49,7 @@ public class AudioWaveView extends View {
     private RectF rectThumbRight = new RectF();
     private Rect rectAnchorLeft = new Rect();
     private Rect rectAnchorRight = new Rect();
+    private Rect rectTextValue = new Rect();
 
     private Paint paintDefault = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintOverlay = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -59,6 +60,7 @@ public class AudioWaveView extends View {
     private Paint paintTimeLineIndicatorSub = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintCenterProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintEditThumb = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintTextValue = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private boolean isShowTimeLineIndicator = true;  //Có hiển thị các đường kẻ giá trị timeline hay không
     private float waveLinePadding = 0f; //Khoảng cách giữa cách đường sóng
@@ -83,6 +85,7 @@ public class AudioWaveView extends View {
     private float minWaveZoomLevel = 0.5f;
     private int textTimeLineDefaultWidth = 0;
     private float textTimeLinePadding = 0;
+    private float textValuePadding = 0f;
 
     private float centerProgressHeight;
     private boolean isThumbProgressVisible = true;
@@ -110,6 +113,7 @@ public class AudioWaveView extends View {
     private Align rightAnchorAlignHorizontal = Align.CENTER;
     private Drawable leftAnchorImage;
     private Drawable rightAnchorImage;
+    private TextValuePosition textValuePosition;
 
     private boolean isMovingThumb;
     private int lastFocusThumbIndex = ThumbIndex.THUMB_NONE;
@@ -221,7 +225,7 @@ public class AudioWaveView extends View {
             maxWaveZoomLevel = ta.getFloat(R.styleable.AudioWaveView_awv_wave_zoom_max_level, 5f);
 
             textTimeLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_padding_with_bar, 0f);
-            paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, Color.parseColor("#45000000")));
+            paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, getAppColor(R.color.text_timeline_color)));
             paintTimeLine.setTextSize(ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_size, dpToPixel(9)));
             paintTimeLine.setTextAlign(Paint.Align.CENTER);
             int fontId = ta.getResourceId(R.styleable.AudioWaveView_awv_text_timeline_font, -1);
@@ -286,9 +290,29 @@ public class AudioWaveView extends View {
             rightAnchorAlignHorizontal = getAlignHorizontal(rightAnchorAlignHorizontalInt);
             anchorImageHeight = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_anchor_height, dpToPixel(16));
             anchorImageWidth = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_anchor_width, dpToPixel(24));
-
             leftAnchorImage = ta.getDrawable(R.styleable.AudioWaveView_awv_thumb_edit_left_anchor_image);
             rightAnchorImage = ta.getDrawable(R.styleable.AudioWaveView_awv_thumb_edit_right_anchor_image);
+
+            paintTextValue.setTextAlign(Paint.Align.CENTER);
+            paintTextValue.setColor(ta.getColor(R.styleable.AudioWaveView_awv_thumb_edit_text_value_color, getAppColor(R.color.text_thumb_cut_text_value_color)));
+            paintTextValue.setTextSize(ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_text_value_size, dpToPixel(9)));
+            textValuePadding = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_edit_text_value_padding, dpToPixel(1));
+            int fontIdTextValue = ta.getResourceId(R.styleable.AudioWaveView_awv_thumb_edit_text_value_font, -1);
+            if (fontIdTextValue != -1) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    paintTextValue.setTypeface(getResources().getFont(fontIdTextValue));
+                } else
+                    paintTextValue.setTypeface(ResourcesCompat.getFont(context, fontIdTextValue));
+            }
+            int textValuePositionValue = ta.getInt(R.styleable.AudioWaveView_awv_thumb_edit_text_value_position, TextValuePosition.NONE.position);
+            if (textValuePositionValue == TextValuePosition.BOTTOM_OF_ANCHOR.position) {
+                textValuePosition = TextValuePosition.BOTTOM_OF_ANCHOR;
+            } else if (textValuePositionValue == TextValuePosition.TOP_OF_ANCHOR.position) {
+                textValuePosition = TextValuePosition.TOP_OF_ANCHOR;
+            } else {
+                textValuePosition = TextValuePosition.NONE;
+            }
+
             ta.recycle();
         }
     }
@@ -831,6 +855,7 @@ public class AudioWaveView extends View {
     private void drawThumbCut(Canvas canvas) {
         canvas.drawRect(rectThumbLeft, paintEditThumb);
         canvas.drawRect(rectThumbRight, paintEditThumb);
+        drawTextValue(canvas);
     }
 
     /**
@@ -860,6 +885,37 @@ public class AudioWaveView extends View {
             validateOverlayByProgress();
             canvas.drawRect(rectOverlayCenter, paintOverlay);
         }
+    }
+
+    /**
+     * draw Text Value At Thumb
+     */
+    private float yText = 0f;
+
+    private void drawTextValue(Canvas canvas) {
+        if (textValuePosition != TextValuePosition.NONE) {
+            paintTextValue.getTextBounds("0", 0, 1, rectTextValue);
+            if (textValuePosition == TextValuePosition.BOTTOM_OF_ANCHOR) {
+                yText = rectAnchorLeft.bottom + textValuePadding + rectTextValue.height();
+            } else {
+                yText = rectAnchorLeft.top - textValuePadding - rectTextValue.height();
+            }
+            String textLeft = convertTimeToTimeFormat(leftProgress);
+            String textRight = convertTimeToTimeFormat(rightProgress);
+            float textLeftWidth = paintTextValue.measureText(textLeft);
+            float textRightWidth = paintTextValue.measureText(textLeft);
+            drawTextValue(canvas, textLeft, rectAnchorLeft, rectView.left + textLeftWidth / 2f, rectAnchorRight.centerX() - textRightWidth / 2f - textLeftWidth / 2f);
+            drawTextValue(canvas, textRight, rectAnchorRight, rectAnchorLeft.centerX() + textRightWidth / 2f + textLeftWidth / 2f, rectView.left + waveViewCurrentWidth - textRightWidth / 2f);
+        }
+    }
+
+    private void drawTextValue(Canvas canvas, String text, Rect rectAnchor, float minX, float maxX) {
+        float xText = rectAnchor.centerX();
+        if (xText < minX) {
+            xText = minX;
+        } else if (xText > maxX)
+            xText = maxX;
+        canvas.drawText(text, xText, yText, paintTextValue);
     }
 
     /**
@@ -1147,6 +1203,15 @@ public class AudioWaveView extends View {
 
         Align(int mode) {
             this.value = mode;
+        }
+    }
+
+    public enum TextValuePosition {
+        NONE(-1), TOP_OF_ANCHOR(1), BOTTOM_OF_ANCHOR(0);
+        public int position;
+
+        TextValuePosition(int position) {
+            this.position = position;
         }
     }
 

@@ -78,5 +78,16 @@
         <attr name="awv_thumb_touch_expand_size" format="dimension" />
         <attr name="awv_fixed_thumb_progress_by_thumb_edit" format="boolean" />
 
+        <attr name="awv_thumb_edit_text_value_size" format="dimension" />
+        <attr name="awv_thumb_edit_text_value_color" format="color" />
+        <attr name="awv_thumb_edit_text_value_font" format="reference" />
+        <attr name="awv_thumb_edit_text_value_padding" format="dimension" />
+
+        <attr name="awv_thumb_edit_text_value_position">
+            <enum name="none" value="-1" />
+            <enum name="bottom_of_anchor" value="0" />
+            <enum name="top_of_anchor" value="1" />
+        </attr>
+
     </declare-styleable>
 </resources>
