@@ -23,9 +23,10 @@
         app:awv_thumb_edit_left_anchor_image="@drawable/ic_anchor_left_cut"
         app:awv_thumb_edit_right_anchor_align_horizontal="left"
         app:awv_thumb_edit_right_anchor_image="@drawable/ic_anchor_right_cut"
+        app:awv_thumb_edit_text_value_position="bottom_of_anchor"
+        app:awv_thumb_edit_text_value_size="9sp"
         app:awv_wave_color="#c3c2f1"
         app:awv_wave_line_padding="2dp"
-        app:awv_thumb_edit_text_value_position="bottom_of_anchor"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

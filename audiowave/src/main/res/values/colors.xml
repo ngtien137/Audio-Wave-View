@@ -4,6 +4,6 @@
     <color name="color_indicator_timeline_sub_indicator_color">#15000000</color>
     <color name="color_overlay_color">#40000000</color>
     <color name="text_timeline_color">#45000000</color>
-    <color name="text_thumb_cut_text_value_color">#45000000</color>
+    <color name="text_thumb_cut_text_value_color">#4643D3</color>
     <color name="color_center_progress_color">#4643D3</color>
 </resources>

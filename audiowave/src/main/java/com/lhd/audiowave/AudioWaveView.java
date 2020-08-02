@@ -153,6 +153,8 @@ public class AudioWaveView extends View {
             @Override
             public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
                 //eLog("Scaling: New: ", scaleGestureDetector.getCurrentSpanX(), "-- Old: ", currentScaleSpanX);
+                if (mHeightsAtThisZoomLevel == null || mHeightsAtThisZoomLevel.length == 0)
+                    return false;
                 float distanceSpan = scaleGestureDetector.getCurrentSpanX() - currentScaleSpanX;
                 float adjustZoom = 0f;
                 if (distanceSpan > touchSlop) {
@@ -1238,9 +1240,21 @@ public class AudioWaveView extends View {
     }
 
     public void setProgress(float progress) {
+        setCenterProgress(progress);
+        postInvalidate();
+    }
+
+    public void setProgress(float progress, boolean scrollToShowCenterProgress){
+        setCenterProgress(progress);
+        if (scrollToShowCenterProgress){
+
+        }
+        postInvalidate();
+    }
+
+    private void setCenterProgress(float progress){
         this.progress = validateProgress(progress, 0f, duration);
         validateThumbProgressWithProgress();
-        postInvalidate();
     }
 
     public void setMinProgress(float progress) {
