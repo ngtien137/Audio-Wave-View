@@ -1247,7 +1247,7 @@ public class AudioWaveView extends View {
     public void setProgress(float progress, boolean scrollToShowCenterProgress){
         setCenterProgress(progress);
         if (scrollToShowCenterProgress){
-
+            //to do here
         }
         postInvalidate();
     }
