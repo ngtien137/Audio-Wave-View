@@ -671,58 +671,53 @@ public class AudioWaveView extends View {
     }
 
     public void setAudioPath(final String path) {
-        post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
-                        @Override
-                        public boolean reportProgress(double fractionComplete) {
-                            if (audioListener != null) {
-                                audioListener.onLoadingAudio((int) (fractionComplete * 100), false);
-                            }
-                            eLog("Progress: ", (int) (fractionComplete * 100));
-                            return true;
-                        }
-                    });
+        try {
+            mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
+                @Override
+                public boolean reportProgress(double fractionComplete) {
                     if (audioListener != null) {
-                        audioListener.onLoadingAudio(100, true);
+                        audioListener.onLoadingAudio((int) (fractionComplete * 100), false);
                     }
-                    mSampleRate = mSoundFile.getSampleRate();
-                    mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
-                    duration = mSoundFile.getDuration();
-                    progress = 0f;
-                    if (modeEdit == ModeEdit.TRIM) {
-                        leftProgress = duration / 2f - minRangeProgress / 2f;
-                        rightProgress = duration / 2f + minRangeProgress / 2f;
-                    } else {
-                        leftProgress = 0f;
-                        rightProgress = duration;
-                    }
-                    computeDoublesForAllZoomLevels();
-                    computeIntsForThisZoomLevel();
-                    if (isAutoAdjustZoomLevel) {
-                        int waveSize = mHeightsAtThisZoomLevel.length;
-                        float widthByWave = waveSize * waveLineWidth + (waveSize - 1) * waveLinePadding;
-                        float zoomLevel = widthByWave / rectView.width();
-                        if (widthByWave > 1f) {
-                            if (minWaveZoomLevel > 1f / zoomLevel)
-                                minWaveZoomLevel = 1f / zoomLevel;
-                            AudioWaveView.this.waveZoomLevel = 1f / zoomLevel;
-                        }
-                    }
-                    calculateCurrentWidthView();
-                    validateEditThumbByProgress();
-                    postInvalidate();
-                } catch (IOException e) {
-                    eLog("Loi doc ghi voi file: ", path);
-                } catch (SoundFile.InvalidInputException e) {
-                    eLog("Loi doc ghi voi file: ", path);
-                } catch (AudioWaveViewException e) {
-                    eLog("Audio Path is not exist or file is invalid. Path: " + path);
+                    eLog("Progress: ", (int) (fractionComplete * 100));
+                    return true;
+                }
+            });
+            if (audioListener != null) {
+                audioListener.onLoadingAudio(100, true);
+            }
+            mSampleRate = mSoundFile.getSampleRate();
+            mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
+            duration = mSoundFile.getDuration();
+            progress = 0f;
+            if (modeEdit == ModeEdit.TRIM) {
+                leftProgress = duration / 2f - minRangeProgress / 2f;
+                rightProgress = duration / 2f + minRangeProgress / 2f;
+            } else {
+                leftProgress = 0f;
+                rightProgress = duration;
+            }
+            computeDoublesForAllZoomLevels();
+            computeIntsForThisZoomLevel();
+            if (isAutoAdjustZoomLevel) {
+                int waveSize = mHeightsAtThisZoomLevel.length;
+                float widthByWave = waveSize * waveLineWidth + (waveSize - 1) * waveLinePadding;
+                float zoomLevel = widthByWave / rectView.width();
+                if (widthByWave > 1f) {
+                    if (minWaveZoomLevel > 1f / zoomLevel)
+                        minWaveZoomLevel = 1f / zoomLevel;
+                    AudioWaveView.this.waveZoomLevel = 1f / zoomLevel;
                 }
             }
-        });
+            calculateCurrentWidthView();
+            validateEditThumbByProgress();
+            postInvalidate();
+        } catch (IOException e) {
+            eLog("Loi doc ghi voi file: ", path);
+        } catch (SoundFile.InvalidInputException e) {
+            eLog("Loi doc ghi voi file: ", path);
+        } catch (AudioWaveViewException e) {
+            eLog("Audio Path is not exist or file is invalid. Path: " + path);
+        }
     }
 
     private void computeIntsForThisZoomLevel() {
