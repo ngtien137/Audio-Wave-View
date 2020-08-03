@@ -87,6 +87,7 @@ public class AudioWaveView extends View {
     private float textTimeLinePadding = 0;
     private float textValuePadding = 0f;
     private boolean isTextValuePullTogether = true; //Text giá trị của thumb edit có đẩy nhau khi ở gần nhau được hay không
+    private boolean isAutoAdjustZoomLevel = false; //Tự động chỉnh kích cỡ zoom level sau khi load audio path
 
     private float centerProgressHeight;
     private boolean isThumbProgressVisible = true;
@@ -226,6 +227,7 @@ public class AudioWaveView extends View {
             waveLineMaxHeight = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_max_height, 0f);
             minWaveZoomLevel = ta.getFloat(R.styleable.AudioWaveView_awv_wave_zoom_min_level, 0.5f);
             maxWaveZoomLevel = ta.getFloat(R.styleable.AudioWaveView_awv_wave_zoom_max_level, 5f);
+            isAutoAdjustZoomLevel = ta.getBoolean(R.styleable.AudioWaveView_awv_wave_zoom_level_auto, false);
 
             textTimeLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_text_timeline_padding_with_bar, 0f);
             paintTimeLine.setColor(ta.getColor(R.styleable.AudioWaveView_awv_text_timeline_color, getAppColor(R.color.text_timeline_color)));
@@ -668,45 +670,59 @@ public class AudioWaveView extends View {
         return mSoundFile != null;
     }
 
-    public void setAudioPath(String path) {
-        try {
-            mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
-                @Override
-                public boolean reportProgress(double fractionComplete) {
+    public void setAudioPath(final String path) {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
+                        @Override
+                        public boolean reportProgress(double fractionComplete) {
+                            if (audioListener != null) {
+                                audioListener.onLoadingAudio((int) (fractionComplete * 100), false);
+                            }
+                            eLog("Progress: ", (int) (fractionComplete * 100));
+                            return true;
+                        }
+                    });
                     if (audioListener != null) {
-                        audioListener.onLoadingAudio((int) (fractionComplete * 100), false);
+                        audioListener.onLoadingAudio(100, true);
                     }
-                    eLog("Progress: ", (int) (fractionComplete * 100));
-                    return true;
+                    mSampleRate = mSoundFile.getSampleRate();
+                    mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
+                    duration = mSoundFile.getDuration();
+                    progress = 0f;
+                    if (modeEdit == ModeEdit.TRIM) {
+                        leftProgress = duration / 2f - minRangeProgress / 2f;
+                        rightProgress = duration / 2f + minRangeProgress / 2f;
+                    } else {
+                        leftProgress = 0f;
+                        rightProgress = duration;
+                    }
+                    computeDoublesForAllZoomLevels();
+                    computeIntsForThisZoomLevel();
+                    if (isAutoAdjustZoomLevel) {
+                        int waveSize = mHeightsAtThisZoomLevel.length;
+                        float widthByWave = waveSize * waveLineWidth + (waveSize - 1) * waveLinePadding;
+                        float zoomLevel = widthByWave / rectView.width();
+                        if (widthByWave > 1f) {
+                            if (minWaveZoomLevel > 1f / zoomLevel)
+                                minWaveZoomLevel = 1f / zoomLevel;
+                            AudioWaveView.this.waveZoomLevel = 1f / zoomLevel;
+                        }
+                    }
+                    calculateCurrentWidthView();
+                    validateEditThumbByProgress();
+                    postInvalidate();
+                } catch (IOException e) {
+                    eLog("Loi doc ghi voi file: ", path);
+                } catch (SoundFile.InvalidInputException e) {
+                    eLog("Loi doc ghi voi file: ", path);
+                } catch (AudioWaveViewException e) {
+                    eLog("Audio Path is not exist or file is invalid. Path: " + path);
                 }
-            });
-            if (audioListener != null) {
-                audioListener.onLoadingAudio(100, true);
             }
-            mSampleRate = mSoundFile.getSampleRate();
-            mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
-            duration = mSoundFile.getDuration();
-            progress = 0f;
-            if (modeEdit == ModeEdit.TRIM) {
-                leftProgress = duration / 2f - minRangeProgress / 2f;
-                rightProgress = duration / 2f + minRangeProgress / 2f;
-            } else {
-                leftProgress = 0f;
-                rightProgress = duration;
-            }
-            computeDoublesForAllZoomLevels();
-            computeIntsForThisZoomLevel();
-            calculateCurrentWidthView();
-            validateEditThumbByProgress();
-            postInvalidate();
-        } catch (IOException e) {
-            eLog("Loi doc ghi voi file: ", path);
-        } catch (SoundFile.InvalidInputException e) {
-            eLog("Loi doc ghi voi file: ", path);
-        } catch (AudioWaveViewException e) {
-            eLog("Audio Path is not exist or file is invalid. Path: " + path);
-        }
-
+        });
     }
 
     private void computeIntsForThisZoomLevel() {

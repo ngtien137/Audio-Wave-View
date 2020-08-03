@@ -27,6 +27,7 @@
         app:awv_thumb_edit_text_value_size="9sp"
         app:awv_wave_color="#c3c2f1"
         app:awv_wave_line_padding="2dp"
+        app:awv_wave_zoom_level_auto="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
