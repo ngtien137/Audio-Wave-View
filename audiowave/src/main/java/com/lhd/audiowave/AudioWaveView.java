@@ -86,6 +86,7 @@ public class AudioWaveView extends View {
     private int textTimeLineDefaultWidth = 0;
     private float textTimeLinePadding = 0;
     private float textValuePadding = 0f;
+    private boolean isTextValuePullTogether = true; //Text giá trị của thumb edit có đẩy nhau khi ở gần nhau được hay không
 
     private float centerProgressHeight;
     private boolean isThumbProgressVisible = true;
@@ -314,6 +315,7 @@ public class AudioWaveView extends View {
             } else {
                 textValuePosition = TextValuePosition.NONE;
             }
+            isTextValuePullTogether = ta.getBoolean(R.styleable.AudioWaveView_awv_thumb_edit_text_value_pull_together, true);
 
             ta.recycle();
         }
@@ -1252,7 +1254,7 @@ public class AudioWaveView extends View {
             if (rectThumbProgress.left > rectView.left + rectView.width() / 2f) {
                 if (rectThumbProgress.left > rectView.left + waveViewCurrentWidth - rectView.width()) {
                     scrollTo((int) (rectView.left + waveViewCurrentWidth - rectView.width()), getScrollY());
-                }else
+                } else
                     scrollTo((int) (rectThumbProgress.left - freezeScrollPosition), getScrollY());
             } else {
                 scrollTo(0, getScrollY());
@@ -1351,6 +1353,11 @@ public class AudioWaveView extends View {
 
     public boolean isFlinging() {
         return isFlinging;
+    }
+
+    public void setTextValuePullTogether(boolean textValuePullTogether) {
+        isTextValuePullTogether = textValuePullTogether;
+        postInvalidate();
     }
 
     public void stopFling() {
