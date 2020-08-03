@@ -710,6 +710,9 @@ public class AudioWaveView extends View {
             }
             calculateCurrentWidthView();
             validateEditThumbByProgress();
+            if (audioListener!=null){
+                audioListener.onLoadingAudioComplete();
+            }
             postInvalidate();
         } catch (IOException e) {
             eLog("Loi doc ghi voi file: ", path);
@@ -1152,6 +1155,7 @@ public class AudioWaveView extends View {
 
     public interface IAudioListener {
         void onLoadingAudio(int progress, boolean prepareView);
+        void onLoadingAudioComplete();
     }
 
     public interface IInteractedListener {
