@@ -698,12 +698,13 @@ public class AudioWaveView extends View {
             validateEditThumbByProgress();
             postInvalidate();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NullPointerException e) {
-            e.printStackTrace();
+            eLog("Loi doc ghi voi file: ", path);
         } catch (SoundFile.InvalidInputException e) {
-            e.printStackTrace();
+            eLog("Loi doc ghi voi file: ", path);
+        } catch (AudioWaveViewException e) {
+            eLog("Audio Path is not exist or file is invalid. Path: " + path);
         }
+
     }
 
     private void computeIntsForThisZoomLevel() {
@@ -1027,8 +1028,8 @@ public class AudioWaveView extends View {
     public void scroll(int disX) {
         if (getScrollX() - disX < 0 || waveViewCurrentWidth <= getWidth()) {
             scrollTo(0, 0);
-        } else if (getScrollX() - disX > waveViewCurrentWidth - getWidth()) {
-            scrollTo((int) (waveViewCurrentWidth - getWidth()), 0);
+        } else if (getScrollX() - disX > rectView.left + waveViewCurrentWidth - getWidth()) {
+            scrollTo((int) (rectView.left + waveViewCurrentWidth - getWidth()), 0);
         } else
             scrollBy(-disX, 0);
 
@@ -1217,7 +1218,7 @@ public class AudioWaveView extends View {
         }
     }
 
-    public void eLog(Object... message) {
+    public static void eLog(Object... message) {
         if (ENABLE_LOG) {
             StringBuilder mes = new StringBuilder();
             for (Object sMes : message
@@ -1244,15 +1245,23 @@ public class AudioWaveView extends View {
         postInvalidate();
     }
 
-    public void setProgress(float progress, boolean scrollToShowCenterProgress){
+    public void setProgress(float progress, boolean scrollToShowCenterProgress) {
         setCenterProgress(progress);
-        if (scrollToShowCenterProgress){
-            //to do here
+        if (scrollToShowCenterProgress && waveViewCurrentWidth > rectView.width()) {
+            float freezeScrollPosition = rectView.left + rectView.width() / 2f;
+            if (rectThumbProgress.left > rectView.left + rectView.width() / 2f) {
+                if (rectThumbProgress.left > rectView.left + waveViewCurrentWidth - rectView.width()) {
+                    scrollTo((int) (rectView.left + waveViewCurrentWidth - rectView.width()), getScrollY());
+                }else
+                    scrollTo((int) (rectThumbProgress.left - freezeScrollPosition), getScrollY());
+            } else {
+                scrollTo(0, getScrollY());
+            }
         }
         postInvalidate();
     }
 
-    private void setCenterProgress(float progress){
+    private void setCenterProgress(float progress) {
         this.progress = validateProgress(progress, 0f, duration);
         validateThumbProgressWithProgress();
     }

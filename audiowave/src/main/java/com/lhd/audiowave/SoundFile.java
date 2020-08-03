@@ -102,7 +102,7 @@ public class SoundFile {
     public static SoundFile create(String fileName,
                                    ProgressListener progressListener)
             throws java.io.FileNotFoundException,
-            java.io.IOException, InvalidInputException {
+            java.io.IOException, InvalidInputException, AudioWaveViewException {
         // First check that the file exists and that its extension is supported.
         File f = new File(fileName);
         if (!f.exists()) {
@@ -196,20 +196,26 @@ public class SoundFile {
         mProgressListener = progressListener;
     }
 
-    private static long getDuration(File file) {
+    private static long getDuration(File file) throws AudioWaveViewException {
+        if (!file.exists())
+            throw new AudioWaveViewException("Audio Path is not exist or file is invalid. Path: " + file.getAbsolutePath());
         long duration = 0;
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(file.getAbsolutePath());
-        String durationStr = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        try {
+            mediaMetadataRetriever.setDataSource(file.getAbsolutePath());
+            String durationStr = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (durationStr != null && !durationStr.isEmpty())
+                duration = Long.parseLong(durationStr);
+        } catch (Exception e) {
+            AudioWaveView.eLog("MediaMetadataRetriever error when get duration: ", e.getMessage());
+        }
         mediaMetadataRetriever.release();
-        if (durationStr != null && !durationStr.isEmpty())
-            duration = Long.parseLong(durationStr);
         return duration;
     }
 
     private void ReadFile(File inputFile)
             throws java.io.FileNotFoundException,
-            java.io.IOException, InvalidInputException {
+            java.io.IOException, InvalidInputException, AudioWaveViewException {
         MediaExtractor extractor = new MediaExtractor();
         MediaFormat format = null;
         int i;

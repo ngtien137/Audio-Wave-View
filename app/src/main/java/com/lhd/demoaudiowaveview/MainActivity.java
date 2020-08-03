@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
     public void setProgress(View view) {
         try {
             float progress = Float.parseFloat(edtProgress.getText().toString());
-            audioWaveView.setProgress(progress);
+            audioWaveView.setProgress(progress, true);
         } catch (Exception e) {
             Toast.makeText(this, "Invalid value", Toast.LENGTH_SHORT).show();
         }
