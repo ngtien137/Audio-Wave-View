@@ -29,8 +29,8 @@ public class SimpleRxTask {
             this.emitter = emitter;
             emitter.onComplete();
         });
-
-        completableObserver = new CompletableObserver() {
+        completableObserver = new CompletableObserver()
+        {
             @Override
             public void onSubscribe(@NonNull Disposable d) {
                 disposable = d;
@@ -40,7 +40,8 @@ public class SimpleRxTask {
 
             @Override
             public void onComplete() {
-                listener.onComplete();
+                if (!disposable.isDisposed())
+                    listener.onComplete();
             }
 
             @Override

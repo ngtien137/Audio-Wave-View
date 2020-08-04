@@ -138,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
 
                     @Override
                     public void onComplete() {
+                        eLog("Loading complete");
                         llLoading.setVisibility(View.GONE);
                     }
 
