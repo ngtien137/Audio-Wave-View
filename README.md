@@ -22,6 +22,9 @@ dependencies {
 ```
 * You can get version of this module [here](https://jitpack.io/#ngtien137/Audio-Wave-View)
 ## All Attributes 
+* Components:
+![alt text](https://github.com/ngtien137/Audio-Wave-View/blob/master/preview/attributes.png) 
+* All attributes
 ```xml
   <declare-styleable name="AudioWaveView">
         <attr name="awv_show_random_preview" format="boolean" />
