@@ -671,6 +671,7 @@ public class AudioWaveView extends View {
     }
 
     public void setAudioPath(final String path) {
+        Exception exceptionError = null;
         try {
             mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
                 @Override
@@ -710,16 +711,24 @@ public class AudioWaveView extends View {
             }
             calculateCurrentWidthView();
             validateEditThumbByProgress();
-            if (audioListener!=null){
+            if (audioListener != null) {
                 audioListener.onLoadingAudioComplete();
             }
             postInvalidate();
         } catch (IOException e) {
+            exceptionError = e;
             eLog("Loi doc ghi voi file: ", path);
         } catch (SoundFile.InvalidInputException e) {
+            exceptionError = e;
             eLog("Loi doc ghi voi file: ", path);
         } catch (AudioWaveViewException e) {
+            exceptionError = e;
             eLog("Audio Path is not exist or file is invalid. Path: " + path);
+        }
+        if (exceptionError!=null) {
+            if (audioListener != null) {
+                audioListener.onLoadingAudioError(exceptionError);
+            }
         }
     }
 
@@ -1155,7 +1164,10 @@ public class AudioWaveView extends View {
 
     public interface IAudioListener {
         void onLoadingAudio(int progress, boolean prepareView);
+
         void onLoadingAudioComplete();
+
+        void onLoadingAudioError(Exception exceptionError);
     }
 
     public interface IInteractedListener {

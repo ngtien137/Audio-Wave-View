@@ -193,6 +193,11 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
         
     }
 
+    @Override
+    public void onLoadingAudioError(Exception exceptionError) {
+
+    }
+
     @SuppressLint("SetTextI18n")
     public void changeMode(View view) {
         if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.NONE) {
