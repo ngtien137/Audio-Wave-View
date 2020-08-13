@@ -169,17 +169,19 @@ public class AudioWaveView extends View {
                     currentScaleSpanX = scaleGestureDetector.getCurrentSpanX();
                     adjustWaveByZoomLevel();
                     calculateCurrentWidthView();
-                    float minProgress = convertPositionToProgress(rectThumbLeft.centerX());
-                    float maxProgress = convertPositionToProgress(rectThumbRight.centerX());
-                    if (maxProgress > duration) {
-                        maxProgress = duration;
-                        validateThumbRightWithProgress();
-                    }
+//                    float minProgress = convertPositionToProgress(rectThumbLeft.centerX());
+//                    float maxProgress = convertPositionToProgress(rectThumbRight.centerX());
+//                    if (maxProgress > duration) {
+//                        maxProgress = duration;
+//                        validateThumbRightWithProgress();
+//                    }
+                    validateEditThumbByProgress();
+                    validateThumbProgressWithProgress();
+                    invalidate();
                     if (interactedListener != null) {
                         interactedListener.onAudioBarScaling();
-                        interactedListener.onRangerChanging(minProgress, maxProgress, AdjustMode.SCALE);
+                        interactedListener.onRangerChanging(leftProgress, rightProgress, AdjustMode.SCALE);
                     }
-                    invalidate();
                 }
                 return true;
             }
@@ -194,6 +196,7 @@ public class AudioWaveView extends View {
             @Override
             public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
                 //eLog("Scale End");
+                invalidate();
             }
         });
 
@@ -778,6 +781,7 @@ public class AudioWaveView extends View {
             drawThumbCut(canvas);
             configureAnchorImageHorizontal();
             drawAnchorImage(canvas);
+            drawTextValue(canvas);
         }
         if (isFlinging) {
             if (scroller.computeScrollOffset()) {
@@ -883,7 +887,6 @@ public class AudioWaveView extends View {
     private void drawThumbCut(Canvas canvas) {
         canvas.drawRect(rectThumbLeft, paintEditThumb);
         canvas.drawRect(rectThumbRight, paintEditThumb);
-        drawTextValue(canvas);
     }
 
     /**
