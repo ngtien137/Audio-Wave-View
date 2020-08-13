@@ -104,6 +104,7 @@ public class AudioWaveView extends View {
     private float rightProgress = 0f;
     private float minRangeProgress = 0f;
     private float thumbTouchExpandSize = 0f;
+    private float minSpaceBetweenText = 0f;
     private boolean isFixedThumbProgressByThumbEdit = true;
     private ModeEdit modeEdit = ModeEdit.NONE;
 
@@ -323,6 +324,7 @@ public class AudioWaveView extends View {
                 textValuePosition = TextValuePosition.NONE;
             }
             isTextValuePullTogether = ta.getBoolean(R.styleable.AudioWaveView_awv_thumb_edit_text_value_pull_together, true);
+            minSpaceBetweenText = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_min_space_between_text, dpToPixel(0f));
 
             ta.recycle();
         }
@@ -943,8 +945,17 @@ public class AudioWaveView extends View {
             String textRight = convertTimeToTimeFormat(rightProgress);
             float textLeftWidth = paintTextValue.measureText(textLeft);
             float textRightWidth = paintTextValue.measureText(textLeft);
-            drawTextValue(canvas, textLeft, rectAnchorLeft, rectView.left + textLeftWidth / 2f, rectAnchorRight.centerX() - textRightWidth / 2f - textLeftWidth / 2f);
-            drawTextValue(canvas, textRight, rectAnchorRight, rectAnchorLeft.centerX() + textRightWidth / 2f + textLeftWidth / 2f, rectView.left + waveViewCurrentWidth - textRightWidth / 2f);
+            float maxTextLeftX = rectAnchorRight.centerX() - textRightWidth / 2f - textLeftWidth / 2f;
+            float minTextRightX = rectAnchorLeft.centerX() + textRightWidth / 2f + textLeftWidth / 2f;
+            if (rectAnchorLeft.centerX() > rectView.left + waveViewCurrentWidth - textRightWidth - textLeftWidth / 2f - minSpaceBetweenText) {
+                maxTextLeftX = rectView.left + waveViewCurrentWidth - textRightWidth - textLeftWidth / 2f - minSpaceBetweenText;
+                minTextRightX =  rectView.left + waveViewCurrentWidth - textRightWidth/2f;
+            }else if (rectAnchorRight.centerX() < rectView.left + textLeftWidth + textRightWidth/2f+minSpaceBetweenText) {
+                minTextRightX = rectView.left + textRightWidth / 2f + textLeftWidth + minSpaceBetweenText;
+                maxTextLeftX = rectView.left + textLeftWidth/2f;
+            }
+            drawTextValue(canvas, textLeft, rectAnchorLeft, rectView.left + textLeftWidth / 2f, maxTextLeftX);
+            drawTextValue(canvas, textRight, rectAnchorRight, minTextRightX, rectView.left + waveViewCurrentWidth - textRightWidth / 2f);
         }
     }
 

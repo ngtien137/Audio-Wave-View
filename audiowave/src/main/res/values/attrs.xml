@@ -84,6 +84,7 @@
         <attr name="awv_thumb_edit_text_value_font" format="reference" />
         <attr name="awv_thumb_edit_text_value_padding" format="dimension" />
         <attr name="awv_thumb_edit_text_value_pull_together" format="boolean" />
+        <attr name="awv_thumb_min_space_between_text" format="dimension" />
 
         <attr name="awv_thumb_edit_text_value_position">
             <enum name="none" value="-1" />
