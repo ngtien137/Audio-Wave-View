@@ -125,6 +125,8 @@ public class AudioWaveView extends View {
     private GestureDetector gestureDetector;
     private Scroller scroller;
 
+    private boolean isCancel;
+
     public AudioWaveView(Context context) {
         super(context);
         initView(context, null);
@@ -673,6 +675,10 @@ public class AudioWaveView extends View {
         return mSoundFile != null;
     }
 
+    public void cancelLoading() {
+        isCancel = true;
+    }
+
     public void setAudioPath(final String path) {
         Exception exceptionError = null;
         try {
@@ -683,12 +689,14 @@ public class AudioWaveView extends View {
                         audioListener.onLoadingAudio((int) (fractionComplete * 100), false);
                     }
                     eLog("Progress: ", (int) (fractionComplete * 100));
-                    return true;
+                    return !isCancel;
                 }
             });
-            if (audioListener != null) {
+            if (audioListener != null && !isCancel) {
                 audioListener.onLoadingAudio(100, true);
             }
+            if (isCancel)
+                return;
             mSampleRate = mSoundFile.getSampleRate();
             mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
             duration = mSoundFile.getDuration();
@@ -728,7 +736,7 @@ public class AudioWaveView extends View {
             exceptionError = e;
             eLog("Audio Path is not exist or file is invalid. Path: " + path);
         }
-        if (exceptionError!=null) {
+        if (exceptionError != null) {
             if (audioListener != null) {
                 audioListener.onLoadingAudioError(exceptionError);
             }
@@ -1078,8 +1086,12 @@ public class AudioWaveView extends View {
         RectF thumbRect;
         if (thumbIndex == ThumbIndex.THUMB_LEFT) {
             thumbRect = rectThumbLeft;
-            float minLeft = rectWave.left;
+            float minLeft = rectWave.left - editThumbWidth / 2f;
+            float maxLeftOfThumbRight = rectWave.right - editThumbWidth / 2f;
+            if (modeEdit == ModeEdit.TRIM && (maxLeftOfThumbRight - rectThumbRight.left) < minBetween)
+                minLeft = rectWave.left + (minBetween - (maxLeftOfThumbRight - rectThumbRight.left)) - editThumbWidth / 2f;
             float maxLeft = rectThumbRight.left - minBetween;
+            if (modeEdit == ModeEdit.TRIM) maxLeft = rectThumbRight.left - editThumbWidth / 2f;
             adjustMove(thumbRect, disMove, minLeft, maxLeft);
             leftProgress = convertPositionToProgress(thumbRect.right);
 
@@ -1088,9 +1100,13 @@ public class AudioWaveView extends View {
         } else if (thumbIndex == ThumbIndex.THUMB_RIGHT) {
             thumbRect = rectThumbRight;
             float minLeft =
-                    rectThumbLeft.right + minBetween;//Bỏ đi giới hạn ở giữa
+                    rectThumbLeft.right + minBetween - editThumbWidth / 2f;//Bỏ đi giới hạn ở giữa
+            if (modeEdit == ModeEdit.TRIM) minLeft = rectThumbLeft.right - editThumbWidth / 2f;
             //(minCutProgress + minProgress).ToDimensionPosition()
-            float maxLeft = rectWave.right - editThumbWidth; //=rectView.left
+            float minLeftOfThumbLeft = rectWave.left - editThumbWidth / 2f;
+            float maxLeft = rectWave.right - editThumbWidth / 2f; //=rectView.left
+            if (modeEdit == ModeEdit.TRIM && (rectThumbLeft.left - minLeftOfThumbLeft) < minBetween)
+                maxLeft = rectWave.right - (minBetween - (rectThumbLeft.left - minLeftOfThumbLeft)) - editThumbWidth / 2f;
             adjustMove(thumbRect, disMove, minLeft, maxLeft);
             rightProgress = convertPositionToProgress(thumbRect.left);
             if (rightProgress < leftProgress + minCutProgress)

@@ -14,6 +14,7 @@
         app:awv_bar_audio_height="120dp"
         app:awv_max_progress="90"
         app:awv_min_progress="10"
+        app:awv_min_range_progress="2000"
         app:awv_mode_edit="cut"
         app:awv_text_timeline_padding_with_bar="4dp"
         app:awv_thumb_edit_align="top"
