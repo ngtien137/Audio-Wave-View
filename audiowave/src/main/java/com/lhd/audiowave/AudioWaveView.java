@@ -743,6 +743,7 @@ public class AudioWaveView extends View {
                 audioListener.onLoadingAudioError(exceptionError);
             }
         }
+        isCancel = false;
     }
 
     private void computeIntsForThisZoomLevel() {
@@ -949,10 +950,10 @@ public class AudioWaveView extends View {
             float minTextRightX = rectAnchorLeft.centerX() + textRightWidth / 2f + textLeftWidth / 2f;
             if (rectAnchorLeft.centerX() > rectView.left + waveViewCurrentWidth - textRightWidth - textLeftWidth / 2f - minSpaceBetweenText) {
                 maxTextLeftX = rectView.left + waveViewCurrentWidth - textRightWidth - textLeftWidth / 2f - minSpaceBetweenText;
-                minTextRightX =  rectView.left + waveViewCurrentWidth - textRightWidth/2f;
-            }else if (rectAnchorRight.centerX() < rectView.left + textLeftWidth + textRightWidth/2f+minSpaceBetweenText) {
+                minTextRightX = rectView.left + waveViewCurrentWidth - textRightWidth / 2f;
+            } else if (rectAnchorRight.centerX() < rectView.left + textLeftWidth + textRightWidth / 2f + minSpaceBetweenText) {
                 minTextRightX = rectView.left + textRightWidth / 2f + textLeftWidth + minSpaceBetweenText;
-                maxTextLeftX = rectView.left + textLeftWidth/2f;
+                maxTextLeftX = rectView.left + textLeftWidth / 2f;
             }
             drawTextValue(canvas, textLeft, rectAnchorLeft, rectView.left + textLeftWidth / 2f, maxTextLeftX);
             drawTextValue(canvas, textRight, rectAnchorRight, minTextRightX, rectView.left + waveViewCurrentWidth - textRightWidth / 2f);
@@ -1335,6 +1336,10 @@ public class AudioWaveView extends View {
         rightProgress = validateProgress(progress, 0f, duration);
         validateEditThumbByProgress();
         postInvalidate();
+    }
+
+    public boolean isCancel(){
+        return isCancel;
     }
 
     private float validateProgress(float progress, float minProgress, float maxProgress) {
