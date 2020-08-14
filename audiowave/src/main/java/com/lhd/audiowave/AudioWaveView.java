@@ -1107,7 +1107,7 @@ public class AudioWaveView extends View {
             adjustMove(thumbRect, disMove, minLeft, maxLeft);
             leftProgress = convertPositionToProgress(thumbRect.right);
 
-            if (leftProgress > rightProgress - minCutProgress)
+            if (leftProgress > rightProgress - minCutProgress && modeEdit == ModeEdit.CUT)
                 leftProgress = rightProgress - minCutProgress;
         } else if (thumbIndex == ThumbIndex.THUMB_RIGHT) {
             thumbRect = rectThumbRight;
@@ -1121,7 +1121,7 @@ public class AudioWaveView extends View {
                 maxLeft = rectWave.right - (minBetween - (rectThumbLeft.left - minLeftOfThumbLeft)) - editThumbWidth / 2f;
             adjustMove(thumbRect, disMove, minLeft, maxLeft);
             rightProgress = convertPositionToProgress(thumbRect.left);
-            if (rightProgress < leftProgress + minCutProgress)
+            if (rightProgress < leftProgress + minCutProgress && modeEdit == ModeEdit.CUT)
                 rightProgress = leftProgress + minCutProgress;
         }
         if (leftProgress < 0)
@@ -1338,7 +1338,7 @@ public class AudioWaveView extends View {
         postInvalidate();
     }
 
-    public boolean isCancel(){
+    public boolean isCancel() {
         return isCancel;
     }
 
