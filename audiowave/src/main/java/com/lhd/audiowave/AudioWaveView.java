@@ -83,6 +83,7 @@ public class AudioWaveView extends View {
     private float waveZoomLevel = 1f;
     private float maxWaveZoomLevel = 5f;
     private float minWaveZoomLevel = 0.5f;
+    private float defaultMinWaveZoomLevel = 0.5f;
     private int textTimeLineDefaultWidth = 0;
     private float textTimeLinePadding = 0;
     private float textValuePadding = 0f;
@@ -231,7 +232,8 @@ public class AudioWaveView extends View {
             paintWave.setStrokeCap(Paint.Cap.ROUND);
             waveLinePadding = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_padding, waveLineWidth / 10f);
             waveLineMaxHeight = ta.getDimension(R.styleable.AudioWaveView_awv_wave_line_max_height, 0f);
-            minWaveZoomLevel = ta.getFloat(R.styleable.AudioWaveView_awv_wave_zoom_min_level, 0.5f);
+            defaultMinWaveZoomLevel = ta.getFloat(R.styleable.AudioWaveView_awv_wave_zoom_min_level, 0.5f);
+            minWaveZoomLevel = defaultMinWaveZoomLevel;
             maxWaveZoomLevel = ta.getFloat(R.styleable.AudioWaveView_awv_wave_zoom_max_level, 5f);
             isAutoAdjustZoomLevel = ta.getBoolean(R.styleable.AudioWaveView_awv_wave_zoom_level_auto, false);
 
@@ -684,6 +686,7 @@ public class AudioWaveView extends View {
     public void setAudioPath(final String path) {
         Exception exceptionError = null;
         try {
+            minWaveZoomLevel = defaultMinWaveZoomLevel;
             mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
                 @Override
                 public boolean reportProgress(double fractionComplete) {
