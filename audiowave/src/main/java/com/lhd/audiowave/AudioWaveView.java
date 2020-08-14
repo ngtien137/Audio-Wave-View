@@ -1417,6 +1417,10 @@ public class AudioWaveView extends View {
         return isFlinging;
     }
 
+    public int getThumbIndex() {
+        return thumbIndex;
+    }
+
     public void setTextValuePullTogether(boolean textValuePullTogether) {
         isTextValuePullTogether = textValuePullTogether;
         postInvalidate();
