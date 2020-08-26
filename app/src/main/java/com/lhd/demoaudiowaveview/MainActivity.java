@@ -65,13 +65,13 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
         audioWaveView.setInteractedListener(new AudioWaveView.IInteractedListener() {
 
             @Override
-            public void onTouchDownAudioBar(float touchProgress) {
-                eLog("Touch Down Progress: ",touchProgress);
+            public void onTouchDownAudioBar(float touchProgress, boolean touchInBar) {
+                eLog("Touch Down Progress: ",touchProgress, " - Touch In Bar: ",touchInBar);
             }
 
             @Override
-            public void onTouchReleaseAudioBar(float touchProgress) {
-                eLog("Touch Up Progress: ",touchProgress);
+            public void onTouchReleaseAudioBar(float touchProgress, boolean touchInBar) {
+                eLog("Touch Up Progress: ",touchProgress, " - Touch In Bar: ",touchInBar);
             }
 
             @Override

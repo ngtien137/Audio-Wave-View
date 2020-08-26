@@ -1030,7 +1030,7 @@ public class AudioWaveView extends View {
             case MotionEvent.ACTION_DOWN:
                 stopFling();
                 if (interactedListener != null) {
-                    interactedListener.onTouchDownAudioBar(convertPositionToProgress(event.getX() + getScrollX()));
+                    interactedListener.onTouchDownAudioBar(convertPositionToProgress(event.getX() + getScrollX()), rectWave.contains(event.getX(), event.getY()));
                 }
                 pointDown.set(event.getX(), event.getY());
                 if ((modeEdit == ModeEdit.TRIM || modeEdit == ModeEdit.CUT) && isThumbEditVisible) {
@@ -1066,7 +1066,7 @@ public class AudioWaveView extends View {
                     }
                 }
                 if (interactedListener != null) {
-                    interactedListener.onTouchReleaseAudioBar(convertPositionToProgress(event.getX() + getScrollX()));
+                    interactedListener.onTouchReleaseAudioBar(convertPositionToProgress(event.getX() + getScrollX()), rectWave.contains(event.getX(), event.getY()));
                 }
                 break;
             default:
@@ -1205,9 +1205,9 @@ public class AudioWaveView extends View {
     }
 
     public interface IInteractedListener {
-        void onTouchDownAudioBar(float touchProgress);
+        void onTouchDownAudioBar(float touchProgress, boolean touchInBar);
 
-        void onTouchReleaseAudioBar(float touchProgress);
+        void onTouchReleaseAudioBar(float touchProgress, boolean touchInBar);
 
         void onAudioBarScaling();
 
@@ -1220,11 +1220,11 @@ public class AudioWaveView extends View {
 
     public abstract static class SimpleInteractedListener implements IInteractedListener {
         @Override
-        public void onTouchDownAudioBar(float touchProgress) {
+        public void onTouchDownAudioBar(float touchProgress, boolean touchInBar) {
         }
 
         @Override
-        public void onTouchReleaseAudioBar(float touchProgress) {
+        public void onTouchReleaseAudioBar(float touchProgress, boolean touchInBar) {
         }
 
         @Override
