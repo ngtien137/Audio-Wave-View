@@ -1030,7 +1030,7 @@ public class AudioWaveView extends View {
             case MotionEvent.ACTION_DOWN:
                 stopFling();
                 if (interactedListener != null) {
-                    interactedListener.onTouchDownAudioBar(convertPositionToProgress(event.getX()));
+                    interactedListener.onTouchDownAudioBar(convertPositionToProgress(event.getX() + getScrollX()));
                 }
                 pointDown.set(event.getX(), event.getY());
                 if ((modeEdit == ModeEdit.TRIM || modeEdit == ModeEdit.CUT) && isThumbEditVisible) {
@@ -1066,7 +1066,7 @@ public class AudioWaveView extends View {
                     }
                 }
                 if (interactedListener != null) {
-                    interactedListener.onTouchReleaseAudioBar(convertPositionToProgress(event.getX()));
+                    interactedListener.onTouchReleaseAudioBar(convertPositionToProgress(event.getX() + getScrollX()));
                 }
                 break;
             default:
