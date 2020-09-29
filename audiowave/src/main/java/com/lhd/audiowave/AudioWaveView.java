@@ -129,6 +129,8 @@ public class AudioWaveView extends View {
 
     private boolean isCancel;
 
+    private int widthScreen;
+
     public AudioWaveView(Context context) {
         super(context);
         initView(context, null);
@@ -379,6 +381,7 @@ public class AudioWaveView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        widthScreen = getResources().getDisplayMetrics().widthPixels;
         rectView.set(getPaddingLeft(), getPaddingTop(), w - getPaddingRight(), h - getPaddingBottom());
         if (audioBarHeight == 0f) {
             audioBarHeight = rectView.height();
@@ -670,7 +673,6 @@ public class AudioWaveView extends View {
         } else {
             mZoomLevel = 0;
         }
-
         mInitialized = true;
     }
 
@@ -779,8 +781,10 @@ public class AudioWaveView extends View {
 
         if (hasSoundFile()) {
             float centerY = rectWave.centerY();
+            int startIndex = 0;
             float offset = 0f + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel;
-            for (int value : mHeightsAtThisZoomLevel) {
+            for (int i = startIndex; i < mHeightsAtThisZoomLevel.length; i++) {
+                int value = mHeightsAtThisZoomLevel[i];
                 canvas.drawLine(offset, centerY - value, offset, centerY + value, paintWave);
                 offset += (waveLineWidth + waveLinePadding) * waveZoomLevel;
             }
