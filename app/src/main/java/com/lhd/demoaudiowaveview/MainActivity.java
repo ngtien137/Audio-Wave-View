@@ -202,16 +202,16 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
     @SuppressLint("SetTextI18n")
     public void changeMode(View view) {
         if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.NONE) {
-            audioWaveView.setModeEdit(AudioWaveView.ModeEdit.CUT);
+            audioWaveView.setModeEdit(AudioWaveView.ModeEdit.TRIM);
             audioWaveView.setLeftAnchorAlignImage(getAppDrawable(R.drawable.ic_anchor_left_cut), AudioWaveView.Align.RIGHT, AudioWaveView.Align.BOTTOM);
             audioWaveView.setRightAnchorAlignImage(getAppDrawable(R.drawable.ic_anchor_right_cut), AudioWaveView.Align.LEFT, AudioWaveView.Align.BOTTOM);
             audioWaveView.setTextValuePullTogether(true);
-        } else if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.CUT) {
-            audioWaveView.setModeEdit(AudioWaveView.ModeEdit.TRIM);
+        } else if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.TRIM) {
+            audioWaveView.setModeEdit(AudioWaveView.ModeEdit.CUT_OUT);
             audioWaveView.setLeftAnchorAlignImage(getAppDrawable(R.drawable.ic_anchor_left_trim), AudioWaveView.Align.LEFT, AudioWaveView.Align.BOTTOM);
             audioWaveView.setRightAnchorAlignImage(getAppDrawable(R.drawable.ic_anchor_right_trim), AudioWaveView.Align.RIGHT, AudioWaveView.Align.BOTTOM);
             audioWaveView.setTextValuePullTogether(false);
-        } else if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.TRIM) {
+        } else if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.CUT_OUT) {
             audioWaveView.setModeEdit(AudioWaveView.ModeEdit.NONE);
         }
         tvMode.setText("Mode: " + audioWaveView.getModeEdit());

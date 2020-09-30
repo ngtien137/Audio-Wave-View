@@ -32,8 +32,8 @@
 
         <attr name="awv_mode_edit">
             <enum name="none" value="0" />
-            <enum name="cut" value="1" />
-            <enum name="trim" value="2" />
+            <enum name="trim" value="1" />
+            <enum name="cut_out" value="2" />
         </attr>
 
         <attr name="awv_progress" format="integer" />
@@ -90,6 +90,16 @@
             <enum name="none" value="-1" />
             <enum name="bottom_of_anchor" value="0" />
             <enum name="top_of_anchor" value="1" />
+        </attr>
+
+        <attr name="awv_thumb_progress_mode">
+            <enum name="flexible_mode" value="0" />
+            <enum name="static_mode" value="1" />
+        </attr>
+
+        <attr name="awv_thumb_progress_static_position" format="enum|dimension">
+            <enum name="left" value="-10" />
+            <enum name="center" value="-11" />
         </attr>
 
     </declare-styleable>

@@ -28,6 +28,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,6 +91,8 @@ public class AudioWaveView extends View {
     private boolean isTextValuePullTogether = true; //Text giá trị của thumb edit có đẩy nhau khi ở gần nhau được hay không
     private boolean isAutoAdjustZoomLevel = false; //Tự động chỉnh kích cỡ zoom level sau khi load audio path
 
+    private ProgressMode thumbProgressMode = ProgressMode.FLEXIBLE;
+    private float thumbProgressStaticPosition = 0f;
     private float centerProgressHeight;
     private boolean isThumbProgressVisible = true;
     private boolean isThumbEditVisible = true;
@@ -128,8 +131,6 @@ public class AudioWaveView extends View {
     private Scroller scroller;
 
     private boolean isCancel;
-
-    private int widthScreen;
 
     public AudioWaveView(Context context) {
         super(context);
@@ -175,12 +176,6 @@ public class AudioWaveView extends View {
                     currentScaleSpanX = scaleGestureDetector.getCurrentSpanX();
                     adjustWaveByZoomLevel();
                     calculateCurrentWidthView();
-//                    float minProgress = convertPositionToProgress(rectThumbLeft.centerX());
-//                    float maxProgress = convertPositionToProgress(rectThumbRight.centerX());
-//                    if (maxProgress > duration) {
-//                        maxProgress = duration;
-//                        validateThumbRightWithProgress();
-//                    }
                     validateEditThumbByProgress();
                     validateThumbProgressWithProgress();
                     invalidate();
@@ -214,7 +209,13 @@ public class AudioWaveView extends View {
                 if (interactedListener != null) {
                     interactedListener.onStartFling();
                 }
-                scroller.fling(getScrollX(), getScrollY(), (int) (-velocityX), 0, 0, (int) waveViewCurrentWidth - getWidth(), 0, getHeight());
+                float minX = 0f;
+                float maxX = (int) waveViewCurrentWidth - getWidth();
+                if (thumbProgressMode == ProgressMode.STATIC) {
+                    minX = 0f - getThumbProgressStaticPosition();
+                    maxX += getThumbProgressStaticPosition();
+                }
+                scroller.fling(getScrollX(), getScrollY(), (int) (-velocityX), 0, (int) minX, (int) maxX, 0, getHeight());
                 invalidate();
                 return true;
             }
@@ -267,10 +268,10 @@ public class AudioWaveView extends View {
 
             modeEdit = ModeEdit.NONE;
             int modeInt = ta.getInt(R.styleable.AudioWaveView_awv_mode_edit, ModeEdit.NONE.mode);
-            if (modeInt == ModeEdit.CUT.mode) {
-                modeEdit = ModeEdit.CUT;
-            } else if (modeInt == ModeEdit.TRIM.mode) {
+            if (modeInt == ModeEdit.TRIM.mode) {
                 modeEdit = ModeEdit.TRIM;
+            } else if (modeInt == ModeEdit.CUT_OUT.mode) {
+                modeEdit = ModeEdit.CUT_OUT;
             }
 
             isShowRandomPreview = ta.getBoolean(R.styleable.AudioWaveView_awv_show_random_preview, true);
@@ -280,6 +281,18 @@ public class AudioWaveView extends View {
             leftProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_progress, 0f);
             rightProgress = ta.getFloat(R.styleable.AudioWaveView_awv_max_progress, duration);
             minRangeProgress = ta.getFloat(R.styleable.AudioWaveView_awv_min_range_progress, 0f);
+
+            int thumbProgressModeInt = ta.getInt(R.styleable.AudioWaveView_awv_thumb_progress_mode, ProgressMode.FLEXIBLE.mode);
+            if (thumbProgressModeInt == ProgressMode.STATIC.mode) {
+                thumbProgressMode = ProgressMode.STATIC;
+            } else {
+                thumbProgressMode = ProgressMode.FLEXIBLE;
+            }
+            try {
+                thumbProgressStaticPosition = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_progress_static_position, 0f);
+            } catch (RuntimeException e) {
+                thumbProgressStaticPosition = ta.getInt(R.styleable.AudioWaveView_awv_thumb_progress_static_position, 0);
+            }
 
             thumbTouchExpandSize = ta.getDimension(R.styleable.AudioWaveView_awv_thumb_touch_expand_size, 0f);
             isFixedThumbProgressByThumbEdit = ta.getBoolean(R.styleable.AudioWaveView_awv_fixed_thumb_progress_by_thumb_edit, true);
@@ -381,7 +394,6 @@ public class AudioWaveView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        widthScreen = getResources().getDisplayMetrics().widthPixels;
         rectView.set(getPaddingLeft(), getPaddingTop(), w - getPaddingRight(), h - getPaddingBottom());
         if (audioBarHeight == 0f) {
             audioBarHeight = rectView.height();
@@ -478,8 +490,28 @@ public class AudioWaveView extends View {
         validateThumbRightWithProgress();
     }
 
+    private float getThumbProgressStaticPosition() {
+        float progressPosition = thumbProgressStaticPosition;
+        if (thumbProgressStaticPosition == ProgressPosition.LEFT.value) {
+            progressPosition = 0f;
+        } else if (thumbProgressStaticPosition == ProgressPosition.CENTER.value) {
+            progressPosition = rectView.width() / 2f;
+        }
+        return progressPosition;
+    }
+
     private void validateThumbProgressWithProgress() {
-        rectThumbProgress.left = convertProgressToPosition(progress);
+        if (thumbProgressMode == ProgressMode.STATIC) {
+            if (thumbProgressStaticPosition == ProgressPosition.LEFT.value) {
+                rectThumbProgress.left = rectView.left - paintCenterProgress.getStrokeWidth() / 2f + getScrollX();
+            } else if (thumbProgressStaticPosition == ProgressPosition.CENTER.value) {
+                rectThumbProgress.left = rectView.centerX() - paintCenterProgress.getStrokeWidth() / 2f + getScrollX();
+            } else {
+                rectThumbProgress.left = thumbProgressStaticPosition + getScrollX();
+            }
+        } else {
+            rectThumbProgress.left = convertProgressToPosition(progress);
+        }
     }
 
     private void validateThumbLeftWithProgress() {
@@ -708,7 +740,7 @@ public class AudioWaveView extends View {
             mSamplesPerFrame = mSoundFile.getSamplesPerFrame();
             duration = mSoundFile.getDuration();
             progress = 0f;
-            if (modeEdit == ModeEdit.TRIM) {
+            if (modeEdit == ModeEdit.CUT_OUT) {
                 leftProgress = duration / 2f - minRangeProgress / 2f;
                 rightProgress = duration / 2f + minRangeProgress / 2f;
             } else {
@@ -781,12 +813,18 @@ public class AudioWaveView extends View {
 
         if (hasSoundFile()) {
             float centerY = rectWave.centerY();
-            int startIndex = 0;
-            float offset = 0f + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel;
+            float offsetIncreaseValue = (waveLineWidth + waveLinePadding) * waveZoomLevel;
+            int startIndex = (int) (getScrollX() / offsetIncreaseValue);
+            if (startIndex < 0)
+                startIndex = 0;
+            float offset = 0f + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel + startIndex * offsetIncreaseValue;
             for (int i = startIndex; i < mHeightsAtThisZoomLevel.length; i++) {
                 int value = mHeightsAtThisZoomLevel[i];
                 canvas.drawLine(offset, centerY - value, offset, centerY + value, paintWave);
-                offset += (waveLineWidth + waveLinePadding) * waveZoomLevel;
+                offset += offsetIncreaseValue;
+                if (offset > getScrollX() + rectView.width()) {
+                    break;
+                }
             }
         } else if (isShowRandomPreview) {
             drawRandomPreview(canvas);
@@ -795,7 +833,7 @@ public class AudioWaveView extends View {
         drawTimeLineAndIndicator(canvas);
         if (isThumbProgressVisible)
             drawCenterProgress(canvas);
-        if (isThumbEditVisible && (modeEdit == ModeEdit.CUT || modeEdit == ModeEdit.TRIM)) {
+        if (isThumbEditVisible && (modeEdit == ModeEdit.TRIM || modeEdit == ModeEdit.CUT_OUT)) {
             drawThumbCut(canvas);
             configureAnchorImageHorizontal();
             drawAnchorImage(canvas);
@@ -899,6 +937,9 @@ public class AudioWaveView extends View {
      * Draw Thumb
      */
     private void drawCenterProgress(Canvas canvas) {
+        if (thumbProgressMode == ProgressMode.STATIC) {
+            validateThumbProgressWithProgress();
+        }
         canvas.drawLine(rectThumbProgress.left, rectThumbProgress.top, rectThumbProgress.left, rectThumbProgress.bottom, paintCenterProgress);
     }
 
@@ -926,11 +967,11 @@ public class AudioWaveView extends View {
      * Draw overlay
      */
     private void drawOverlay(Canvas canvas) {
-        if (modeEdit == ModeEdit.CUT && isThumbEditVisible) {
+        if (modeEdit == ModeEdit.TRIM && isThumbEditVisible) {
             validateOverlayByProgress();
             canvas.drawRect(rectOverlayLeft, paintOverlay);
             canvas.drawRect(rectOverlayRight, paintOverlay);
-        } else if (modeEdit == ModeEdit.TRIM && isThumbEditVisible) {
+        } else if (modeEdit == ModeEdit.CUT_OUT && isThumbEditVisible) {
             validateOverlayByProgress();
             canvas.drawRect(rectOverlayCenter, paintOverlay);
         }
@@ -1037,7 +1078,7 @@ public class AudioWaveView extends View {
                     interactedListener.onTouchDownAudioBar(convertPositionToProgress(event.getX() + getScrollX()), rectWave.contains(event.getX(), event.getY()));
                 }
                 pointDown.set(event.getX(), event.getY());
-                if ((modeEdit == ModeEdit.TRIM || modeEdit == ModeEdit.CUT) && isThumbEditVisible) {
+                if ((modeEdit == ModeEdit.CUT_OUT || modeEdit == ModeEdit.TRIM) && isThumbEditVisible) {
                     thumbIndex = getThumbFocus();
                 }
                 return true;
@@ -1081,10 +1122,16 @@ public class AudioWaveView extends View {
     }
 
     public void scroll(int disX) {
-        if (getScrollX() - disX < 0 || waveViewCurrentWidth <= getWidth()) {
-            scrollTo(0, 0);
-        } else if (getScrollX() - disX > rectView.left + waveViewCurrentWidth - getWidth()) {
-            scrollTo((int) (rectView.left + waveViewCurrentWidth - getWidth()), 0);
+        float maxLeft = 0f;
+        float maxRight = rectView.left + waveViewCurrentWidth - getWidth();
+        if (thumbProgressMode == ProgressMode.STATIC) {
+            maxLeft = 0f - getThumbProgressStaticPosition();
+            maxRight += getThumbProgressStaticPosition();
+        }
+        if (getScrollX() - disX < maxLeft || (waveViewCurrentWidth <= getWidth() && thumbProgressMode != ProgressMode.STATIC)) {
+            scrollTo((int) maxLeft, 0);
+        } else if (getScrollX() - disX > maxRight) {
+            scrollTo((int) (maxRight), 0);
         } else
             scrollBy(-disX, 0);
 
@@ -1107,28 +1154,28 @@ public class AudioWaveView extends View {
             thumbRect = rectThumbLeft;
             float minLeft = rectWave.left - editThumbWidth / 2f;
             float maxLeftOfThumbRight = rectWave.right - editThumbWidth / 2f;
-            if (modeEdit == ModeEdit.TRIM && (maxLeftOfThumbRight - rectThumbRight.left) < minBetween)
+            if (modeEdit == ModeEdit.CUT_OUT && (maxLeftOfThumbRight - rectThumbRight.left) < minBetween)
                 minLeft = rectWave.left + (minBetween - (maxLeftOfThumbRight - rectThumbRight.left)) - editThumbWidth / 2f;
             float maxLeft = rectThumbRight.left - minBetween;
-            if (modeEdit == ModeEdit.TRIM) maxLeft = rectThumbRight.left - editThumbWidth / 2f;
+            if (modeEdit == ModeEdit.CUT_OUT) maxLeft = rectThumbRight.left - editThumbWidth / 2f;
             adjustMove(thumbRect, disMove, minLeft, maxLeft);
             leftProgress = convertPositionToProgress(thumbRect.right);
 
-            if (leftProgress > rightProgress - minCutProgress && modeEdit == ModeEdit.CUT)
+            if (leftProgress > rightProgress - minCutProgress && modeEdit == ModeEdit.TRIM)
                 leftProgress = rightProgress - minCutProgress;
         } else if (thumbIndex == ThumbIndex.THUMB_RIGHT) {
             thumbRect = rectThumbRight;
             float minLeft =
                     rectThumbLeft.right + minBetween - editThumbWidth / 2f;//Bỏ đi giới hạn ở giữa
-            if (modeEdit == ModeEdit.TRIM) minLeft = rectThumbLeft.right - editThumbWidth / 2f;
+            if (modeEdit == ModeEdit.CUT_OUT) minLeft = rectThumbLeft.right - editThumbWidth / 2f;
             //(minCutProgress + minProgress).ToDimensionPosition()
             float minLeftOfThumbLeft = rectWave.left - editThumbWidth / 2f;
             float maxLeft = rectWave.right - editThumbWidth / 2f; //=rectView.left
-            if (modeEdit == ModeEdit.TRIM && (rectThumbLeft.left - minLeftOfThumbLeft) < minBetween)
+            if (modeEdit == ModeEdit.CUT_OUT && (rectThumbLeft.left - minLeftOfThumbLeft) < minBetween)
                 maxLeft = rectWave.right - (minBetween - (rectThumbLeft.left - minLeftOfThumbLeft)) - editThumbWidth / 2f;
             adjustMove(thumbRect, disMove, minLeft, maxLeft);
             rightProgress = convertPositionToProgress(thumbRect.left);
-            if (rightProgress < leftProgress + minCutProgress && modeEdit == ModeEdit.CUT)
+            if (rightProgress < leftProgress + minCutProgress && modeEdit == ModeEdit.TRIM)
                 rightProgress = leftProgress + minCutProgress;
         }
         if (leftProgress < 0)
@@ -1155,7 +1202,7 @@ public class AudioWaveView extends View {
 
     private void fixProgressCenterWhenMoveThumb() {
         if (isFixedThumbProgressByThumbEdit && isThumbEditVisible) {
-            if (modeEdit == ModeEdit.CUT) {
+            if (modeEdit == ModeEdit.TRIM) {
                 if (progress < leftProgress) {
                     progress = leftProgress;
                 } else if (progress > rightProgress)
@@ -1259,11 +1306,29 @@ public class AudioWaveView extends View {
     }
 
     public enum ModeEdit {
-        NONE(0), TRIM(2), CUT(1);
+        NONE(0), CUT_OUT(2), TRIM(1);
         public int mode;
 
         ModeEdit(int mode) {
             this.mode = mode;
+        }
+    }
+
+    public enum ProgressMode {
+        FLEXIBLE(0), STATIC(1);
+        public int mode;
+
+        ProgressMode(int mode) {
+            this.mode = mode;
+        }
+    }
+
+    public enum ProgressPosition {
+        LEFT(-10), CENTER(-11);
+        public int value;
+
+        ProgressPosition(int value) {
+            this.value = value;
         }
     }
 
@@ -1369,11 +1434,11 @@ public class AudioWaveView extends View {
             max = duration;
         }
         if (isFixedThumbProgressByThumbEdit) {
-            if (modeEdit == ModeEdit.CUT) {
+            if (modeEdit == ModeEdit.TRIM) {
                 if (!(progress > min && progress < max)) {
                     progress = min;
                 }
-            } else if (modeEdit == ModeEdit.TRIM) {
+            } else if (modeEdit == ModeEdit.CUT_OUT) {
                 if (progress > min && progress < max) {
                     progress = 0f;
                 }
