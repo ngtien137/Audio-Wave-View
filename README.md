@@ -1,3 +1,4 @@
+[![](https://jitpack.io/v/ngtien137/Audio-Wave-View.svg)](https://jitpack.io/#ngtien137/Audio-Wave-View)
 # Audio Wave View
 Audio Sample View
 ## Preview 
