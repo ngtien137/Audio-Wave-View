@@ -77,7 +77,10 @@
         <attr name="awv_thumb_edit_anchor_width" format="dimension" />
         <attr name="awv_thumb_edit_anchor_height" format="dimension" />
         <attr name="awv_thumb_touch_expand_size" format="dimension" />
+        <attr name="awv_thumb_edit_circle_visible" format="boolean" />
+        <attr name="awv_thumb_edit_circle_radius" format="dimension" />
         <attr name="awv_fixed_thumb_progress_by_thumb_edit" format="boolean" />
+        <attr name="awv_thumb_progress_at_center_after_initializing" format="boolean" />
 
         <attr name="awv_thumb_edit_text_value_size" format="dimension" />
         <attr name="awv_thumb_edit_text_value_color" format="color" />

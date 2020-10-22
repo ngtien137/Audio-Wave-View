@@ -93,6 +93,11 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
             public void onStartFling() {
                 eLog("OnStart Fling");
             }
+
+            @Override
+            public void onProgressThumbChanging(float progress, boolean adjustedByInteracting) {
+
+            }
         });
     }
 
