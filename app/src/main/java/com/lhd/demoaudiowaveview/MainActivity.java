@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
     private LinearLayout llLoading;
     private TextView tvLoading;
     private TextView tvMode;
+    private TextView tvProgressMode;
     private EditText edtMin;
     private EditText edtProgress;
     private EditText edtMax;
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
         llLoading = findViewById(R.id.llLoading);
         tvLoading = findViewById(R.id.tvLoading);
         tvMode = findViewById(R.id.tvMode);
+        tvProgressMode = findViewById(R.id.tvProgressMode);
         edtProgress = findViewById(R.id.edtProgress);
         edtMin = findViewById(R.id.edtMin);
         edtMax = findViewById(R.id.edtMax);
@@ -66,12 +68,15 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
 
             @Override
             public void onTouchDownAudioBar(float touchProgress, boolean touchInBar) {
-                eLog("Touch Down Progress: ",touchProgress, " - Touch In Bar: ",touchInBar);
+                eLog("Touch Down Progress: ", touchProgress, " - Touch In Bar: ", touchInBar);
+                if (audioWaveView.getThumbProgressMode() == AudioWaveView.ProgressMode.FLEXIBLE) {
+                    audioWaveView.setProgress(touchProgress, true);
+                }
             }
 
             @Override
             public void onTouchReleaseAudioBar(float touchProgress, boolean touchInBar) {
-                eLog("Touch Up Progress: ",touchProgress, " - Touch In Bar: ",touchInBar);
+                eLog("Touch Up Progress: ", touchProgress, " - Touch In Bar: ", touchInBar);
             }
 
             @Override
@@ -196,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
 
     @Override
     public void onLoadingAudioComplete() {
-        
+
     }
 
     @Override
@@ -220,6 +225,17 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
             audioWaveView.setModeEdit(AudioWaveView.ModeEdit.NONE);
         }
         tvMode.setText("Mode: " + audioWaveView.getModeEdit());
+    }
+
+    public void changeProgressMode(View view) {
+        if (audioWaveView.getThumbProgressMode() == AudioWaveView.ProgressMode.FLEXIBLE) {
+            tvProgressMode.setText("Current Mode: Static");
+            audioWaveView.setThumbProgressMode(AudioWaveView.ProgressMode.STATIC);
+        } else {
+            audioWaveView.scroll(0);
+            tvProgressMode.setText("Current Mode: Flexible");
+            audioWaveView.setThumbProgressMode(AudioWaveView.ProgressMode.FLEXIBLE);
+        }
     }
 
     public void applyRange(View view) {

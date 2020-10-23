@@ -1614,6 +1614,15 @@ public class AudioWaveView extends View {
         return modeEdit;
     }
 
+    public ProgressMode getThumbProgressMode() {
+        return thumbProgressMode;
+    }
+
+    public void setThumbProgressMode(ProgressMode thumbProgressMode) {
+        this.thumbProgressMode = thumbProgressMode;
+        setProgress(0f, true);
+    }
+
     public float getDuration() {
         return duration;
     }

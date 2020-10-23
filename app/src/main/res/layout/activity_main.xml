@@ -15,10 +15,8 @@
         app:awv_max_progress="90"
         app:awv_min_progress="10"
         app:awv_min_range_progress="0000"
-        app:awv_mode_edit="trim"
+        app:awv_mode_edit="none"
         app:awv_text_timeline_padding_with_bar="4dp"
-        app:awv_thumb_progress_mode="static_mode"
-        app:awv_thumb_progress_static_position="center"
         app:awv_thumb_edit_align="top"
         app:awv_thumb_edit_height="140dp"
         app:awv_thumb_edit_left_anchor_align_horizontal="right"
@@ -29,6 +27,8 @@
         app:awv_thumb_edit_text_value_position="bottom_of_anchor"
         app:awv_thumb_edit_text_value_size="9sp"
         app:awv_thumb_min_space_between_text="10dp"
+        app:awv_thumb_progress_mode="flexible_mode"
+        app:awv_thumb_progress_static_position="center"
         app:awv_wave_color="#c3c2f1"
         app:awv_wave_line_padding="2dp"
         app:awv_wave_zoom_level_auto="true"
@@ -77,6 +77,25 @@
                 android:layout_height="wrap_content"
                 android:onClick="changeMode"
                 android:text="@string/change_mode"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/audioView" />
+
+            <TextView
+                android:id="@+id/tvProgressMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginLeft="4dp"
+                android:text="@string/current_mode_preview"
+                android:textColor="#f0f" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="changeProgressMode"
+                android:text="@string/change_progress_mode"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
