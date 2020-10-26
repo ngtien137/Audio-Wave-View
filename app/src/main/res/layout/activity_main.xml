@@ -88,7 +88,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginLeft="4dp"
-                android:text="@string/current_mode_preview"
+                android:text="@string/current_mode_progress"
                 android:textColor="#f0f" />
 
             <Button

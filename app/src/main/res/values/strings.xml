@@ -3,7 +3,8 @@
     <string name="choose_audio">Choose audio</string>
     <string name="loading">Loading</string>
     <string name="change_mode">Change Mode</string>
-    <string name="current_mode_preview">Current Mode: Flexible</string>
+    <string name="current_mode_preview">Current Mode: None</string>
+    <string name="current_mode_progress">Current Mode Progress: Flexible</string>
     <string name="min">Min</string>
     <string name="max">Max</string>
     <string name="apply_range">Apply range</string>

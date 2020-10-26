@@ -70,7 +70,8 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
             public void onTouchDownAudioBar(float touchProgress, boolean touchInBar) {
                 eLog("Touch Down Progress: ", touchProgress, " - Touch In Bar: ", touchInBar);
                 if (audioWaveView.getThumbProgressMode() == AudioWaveView.ProgressMode.FLEXIBLE) {
-                    audioWaveView.setProgress(touchProgress, true);
+                    if (audioWaveView.getModeEdit() == AudioWaveView.ModeEdit.NONE)
+                        audioWaveView.setProgress(touchProgress, true);
                 }
             }
 
