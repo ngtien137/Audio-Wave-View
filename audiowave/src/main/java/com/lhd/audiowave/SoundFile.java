@@ -39,29 +39,30 @@ import java.nio.ShortBuffer;
 import java.util.Arrays;
 
 public class SoundFile {
-    private ProgressListener mProgressListener = null;
-    private File mInputFile = null;
+
+    protected ProgressListener mProgressListener = null;
+    protected File mInputFile = null;
 
     // Member variables representing frame data
-    private String mFileType;
-    private int mFileSize;
-    private int mAvgBitRate;  // Average bit rate in kbps.
-    private int mSampleRate;
-    private long mDuration;
-    private int mChannels;
-    private int mNumSamples;  // total number of samples per channel in audio file
-    private ByteBuffer mDecodedBytes;  // Raw audio data
-    private ShortBuffer mDecodedSamples;  // shared buffer with mDecodedBytes.
+    protected String mFileType;
+    protected int mFileSize;
+    protected int mAvgBitRate;  // Average bit rate in kbps.
+    protected int mSampleRate;
+    protected long mDuration;
+    protected int mChannels;
+    protected int mNumSamples;  // total number of samples per channel in audio file
+    protected ByteBuffer mDecodedBytes;  // Raw audio data
+    protected ShortBuffer mDecodedSamples;  // shared buffer with mDecodedBytes.
     // mDecodedSamples has the following format:
     // {s1c1, s1c2, ..., s1cM, s2c1, ..., s2cM, ..., sNc1, ..., sNcM}
     // where sicj is the ith sample of the jth channel (a sample is a signed short)
     // M is the number of channels (e.g. 2 for stereo) and N is the number of samples per channel.
 
     // Member variables for hack (making it work with old version, until app just uses the samples).
-    private int mNumFrames;
-    private int[] mFrameGains;
-    private int[] mFrameLens;
-    private int[] mFrameOffsets;
+    protected int mNumFrames;
+    protected int[] mFrameGains;
+    protected int[] mFrameLens;
+    protected int[] mFrameOffsets;
 
     // Progress listener interface.
     public interface ProgressListener {
@@ -117,6 +118,9 @@ public class SoundFile {
             return null;
         }
         SoundFile soundFile = new SoundFile();
+        if (fileName.toLowerCase().endsWith("mp3")) {
+            soundFile = new CheapMP3();
+        }
         soundFile.setProgressListener(progressListener);
         soundFile.ReadFile(f);
         return soundFile;
@@ -189,7 +193,7 @@ public class SoundFile {
     }
 
     // A SoundFile object should only be created using the static methods create() and record().
-    private SoundFile() {
+    public SoundFile() {
     }
 
     private void setProgressListener(ProgressListener progressListener) {
@@ -213,7 +217,7 @@ public class SoundFile {
         return duration;
     }
 
-    private void ReadFile(File inputFile)
+    protected void ReadFile(File inputFile)
             throws java.io.FileNotFoundException,
             java.io.IOException, InvalidInputException, AudioWaveViewException {
         MediaExtractor extractor = new MediaExtractor();
