@@ -6,4 +6,5 @@
     <color name="text_timeline_color">#45000000</color>
     <color name="text_thumb_cut_text_value_color">#4643D3</color>
     <color name="color_center_progress_color">#4643D3</color>
+    <color name="color_transparent">#0000</color>
 </resources>

@@ -357,6 +357,8 @@ public class SoundFile {
                 // Subsequent data will conform to new format.
                 // We could check that codec.getOutputFormat(), which is the new output format,
                 // is what we expect.
+            } else if (outputBufferIndex == -1) {
+                //Chả hiểu sao có mấy bài nhạc cái này trả ra auto = 1 nên bị lỗi vòng lặp vô tận
             }
             if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0
                     || (mDecodedBytes.position() / (2 * mChannels)) >= expectedNumSamples) {
