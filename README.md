@@ -29,7 +29,8 @@ dependencies {
 ```xml
 <declare-styleable name="AudioWaveView">
     <attr name="awv_show_random_preview" format="boolean" />
-    <attr name="awv_overlay_color" format="color" />
+    <attr name="awv_overlay_color_remove" format="color" />
+    <attr name="awv_overlay_color_pick" format="color" />
     <attr name="awv_background_color" format="color" />
     <attr name="awv_bar_audio_height" format="dimension" />
 
@@ -107,7 +108,7 @@ dependencies {
     <attr name="awv_thumb_edit_circle_visible" format="boolean" />
     <attr name="awv_thumb_edit_circle_radius" format="dimension" />
     <attr name="awv_fixed_thumb_progress_by_thumb_edit" format="boolean" />
-    <attr name="awv_thumb_progress_at_center_after_initializing" format="boolean" />
+    <attr name="awv_thumb_progress_to_zero_after_initializing" format="boolean" />
 
     <attr name="awv_thumb_edit_text_value_size" format="dimension" />
     <attr name="awv_thumb_edit_text_value_color" format="color" />
@@ -130,6 +131,12 @@ dependencies {
     <attr name="awv_thumb_progress_static_position" format="enum|dimension">
         <enum name="left" value="-10" />
         <enum name="center" value="-11" />
+    </attr>
+
+    <attr name="awv_cache_mode" format="enum">
+        <enum name="none" value="0" />
+        <enum name="single" value="1" />
+        <enum name="multiple" value="2" />
     </attr>
 
 </declare-styleable>
