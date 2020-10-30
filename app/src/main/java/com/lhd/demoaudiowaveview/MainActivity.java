@@ -67,6 +67,11 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
         audioWaveView.setInteractedListener(new AudioWaveView.IInteractedListener() {
 
             @Override
+            public void onTouchDownAudioBar(float touchProgress, boolean touchInBar) {
+                eLog("TouchProgress: ", touchProgress);
+            }
+
+            @Override
             public void onClickAudioBar(float touchProgress, boolean touchInBar) {
                 eLog("Touch Down Progress: ", touchProgress, " - Touch In Bar: ", touchInBar);
                 if (audioWaveView.getThumbProgressMode() == AudioWaveView.ProgressMode.FLEXIBLE) {
@@ -141,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
                 Uri uri = data.getData();
                 eLog(uri);
                 final String path = getAudioPath(uri);
+                eLog("Path: ", path);
                 simpleRxTask = new SimpleRxTask(new SimpleRxTask.Listener() {
                     @Override
                     public void onStart() {
@@ -207,7 +213,8 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
 
     @Override
     public void onLoadingAudioError(Exception exceptionError) {
-        Toast.makeText(this, "Can not load this audio!", Toast.LENGTH_SHORT).show();;
+        Toast.makeText(this, "Can not load this audio!", Toast.LENGTH_SHORT).show();
+        ;
     }
 
     @SuppressLint("SetTextI18n")

@@ -120,6 +120,7 @@ public class SoundFile {
         SoundFile soundFile = new SoundFile();
         if (fileName.toLowerCase().endsWith("mp3")) {
             soundFile = new CheapMP3();
+            soundFile.mInputFile = f;
         }
         soundFile.setProgressListener(progressListener);
         soundFile.ReadFile(f);
@@ -217,18 +218,21 @@ public class SoundFile {
         return duration;
     }
 
+    protected void initFileInfoWithInputFile(File inputFile) throws AudioWaveViewException {
+        mInputFile = inputFile;
+        mDuration = getDuration(inputFile);
+        String[] components = mInputFile.getPath().split("\\.");
+        mFileType = components[components.length - 1];
+        mFileSize = (int) mInputFile.length();
+    }
+
     protected void ReadFile(File inputFile)
             throws java.io.FileNotFoundException,
             java.io.IOException, InvalidInputException, AudioWaveViewException {
         MediaExtractor extractor = new MediaExtractor();
         MediaFormat format = null;
         int i;
-
-        mInputFile = inputFile;
-        mDuration = getDuration(inputFile);
-        String[] components = mInputFile.getPath().split("\\.");
-        mFileType = components[components.length - 1];
-        mFileSize = (int) mInputFile.length();
+        initFileInfoWithInputFile(inputFile);
         extractor.setDataSource(mInputFile.getPath());
         int numTracks = extractor.getTrackCount();
         // find and select the first audio track present in the file.

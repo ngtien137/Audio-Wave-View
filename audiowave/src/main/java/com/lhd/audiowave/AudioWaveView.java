@@ -253,6 +253,7 @@ public class AudioWaveView extends View {
                     if (interactedListener != null) {
                         interactedListener.onStartFling();
                     }
+                    eLog("Max: ", maxX, "--- MIn: ", minX);
                     scroller.fling(getScrollX(), getScrollY(), (int) (-velocityX), 0, (int) minX, (int) maxX, getScrollY(), getScrollY());
                     invalidate();
                 }
@@ -778,7 +779,7 @@ public class AudioWaveView extends View {
         minWaveZoomLevel = defaultMinWaveZoomLevel;
         try {
             if (cacheMode == CacheMode.NONE || mapCache.get(path) == null) {
-                mSoundFile = SoundFile.  create(path, new SoundFile.ProgressListener() {
+                mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
                     @Override
                     public boolean reportProgress(double fractionComplete) {
                         if (audioListener != null) {
@@ -927,7 +928,7 @@ public class AudioWaveView extends View {
             if (scroller.isFinished() || !scroller.computeScrollOffset() || flingDistanceLess <= 10) {
                 isFlinging = false;
                 isSendFlingEndEvent = true;
-                scroller.forceFinished(false);
+                scroller.forceFinished(true);
                 if (interactedListener != null) {
                     if (thumbProgressMode == ProgressMode.STATIC) {
                         progress = getCurrentStaticProgress();
@@ -1187,6 +1188,10 @@ public class AudioWaveView extends View {
         return 1f * (getScrollX() + getThumbProgressStaticPosition()) / rectWave.width() * duration;
     }
 
+    private float convertStaticPositionToProgress(float pixel) {
+        return 1f * (getScrollX() + pixel) / rectWave.width() * duration;
+    }
+
     private String convertTimeToTimeFormat(float time) {
         int t = (int) time / 1000;
         int second = t % 60;
@@ -1207,6 +1212,13 @@ public class AudioWaveView extends View {
                 eLog("Action Down ", "---- Fling: ", isFlinging);
                 if (!isSendFlingEndEvent)
                     stopFling();
+                if (interactedListener != null) {
+                    float touchProgress = convertPositionToProgress(event.getX() + getScrollX());
+                    if (thumbProgressMode == ProgressMode.STATIC) {
+                        touchProgress = convertStaticPositionToProgress(event.getX());
+                    }
+                    interactedListener.onTouchDownAudioBar(touchProgress, rectWave.contains(event.getX(), event.getY()));
+                }
                 pointDown.set(event.getX(), event.getY());
                 if ((modeEdit == ModeEdit.CUT_OUT || modeEdit == ModeEdit.TRIM) && isThumbEditVisible) {
                     thumbIndex = getThumbFocus();
@@ -1222,7 +1234,7 @@ public class AudioWaveView extends View {
                 if (isScrolling) {
                     if (thumbIndex == ThumbIndex.THUMB_NONE) {
                         scroll((int) disX);
-                        //eLog("Scroll: ", getScrollX());
+                        eLog("Scroll: ", getScrollX());
                         if (interactedListener != null) {
                             progress = getCurrentStaticProgress();
                             interactedListener.onProgressThumbChanging(progress, ProgressAdjustMode.ADJUST_BY_MOVING);
@@ -1253,11 +1265,19 @@ public class AudioWaveView extends View {
                     }
                 } else {
                     if (interactedListener != null) {
-                        interactedListener.onClickAudioBar(convertPositionToProgress(event.getX() + getScrollX()), rectWave.contains(event.getX(), event.getY()));
+                        float touchProgress = convertPositionToProgress(event.getX() + getScrollX());
+                        if (thumbProgressMode == ProgressMode.STATIC) {
+                            touchProgress = convertStaticPositionToProgress(event.getX());
+                        }
+                        interactedListener.onClickAudioBar(touchProgress, rectWave.contains(event.getX(), event.getY()));
                     }
                 }
                 if (interactedListener != null) {
-                    interactedListener.onTouchReleaseAudioBar(convertPositionToProgress(event.getX() + getScrollX()), rectWave.contains(event.getX(), event.getY()));
+                    float touchProgress = convertPositionToProgress(event.getX() + getScrollX());
+                    if (thumbProgressMode == ProgressMode.STATIC) {
+                        touchProgress = convertStaticPositionToProgress(event.getX());
+                    }
+                    interactedListener.onTouchReleaseAudioBar(touchProgress, rectWave.contains(event.getX(), event.getY()));
                 }
                 break;
             default:
@@ -1286,7 +1306,7 @@ public class AudioWaveView extends View {
                             setCenterProgress(leftProgress, ProgressAdjustMode.ADJUST_BY_MOVING);
                     }
                 }
-            } else { //Mode Cut  out
+            } else if (modeEdit == ModeEdit.CUT_OUT) { //Mode Cut  out
                 if (progress > leftProgress && progress < rightProgress) {
                     if (thumbIndex == ThumbIndex.THUMB_LEFT) {
                         if (progress > leftProgress) {
@@ -1449,6 +1469,8 @@ public class AudioWaveView extends View {
     }
 
     public interface IInteractedListener {
+        void onTouchDownAudioBar(float touchProgress, boolean touchInBar);
+
         void onClickAudioBar(float touchProgress, boolean touchInBar);
 
         void onTouchReleaseAudioBar(float touchProgress, boolean touchInBar);
@@ -1717,7 +1739,7 @@ public class AudioWaveView extends View {
             isFlinging = false;
             isSendFlingEndEvent = true;
             if (!scroller.isFinished()) {
-                scroller.forceFinished(false);
+                scroller.forceFinished(true);
             }
             if (interactedListener != null) {
                 if (thumbProgressMode == ProgressMode.STATIC) {

@@ -23,16 +23,14 @@ import java.io.FileInputStream;
  * CheapMP3 represents an MP3 file by doing a "cheap" scan of the file,
  * parsing the frame headers only and getting an extremely rough estimate
  * of the volume level of each frame.
- *
+ * <p>
  * Modified by Anna Stępień <anna.stepien@semantive.com>
- * 
  */
 public class CheapMP3 extends SoundFile {
 
     // Member variables representing frame data
     private int mNumFrames;
     private int[] mFrameGains;
-    private int mFileSize;
     private int mAvgBitRate;
     private int mGlobalSampleRate;
     private int mGlobalChannels;
@@ -56,7 +54,7 @@ public class CheapMP3 extends SoundFile {
     }
 
     public int getFileSizeBytes() {
-        return mFileSize;        
+        return mFileSize;
     }
 
     public int getAvgBitrateKbps() {
@@ -87,7 +85,7 @@ public class CheapMP3 extends SoundFile {
         mMaxGain = 0;
 
         // No need to handle filesizes larger than can fit in a 32-bit int
-        mFileSize = (int)mInputFile.length();
+        initFileInfoWithInputFile(inputFile);
 
         FileInputStream stream = new FileInputStream(mInputFile);
 
@@ -106,7 +104,7 @@ public class CheapMP3 extends SoundFile {
 
             if (mProgressListener != null) {
                 boolean keepGoing = mProgressListener.reportProgress(
-                    pos * 1.0 / mFileSize);
+                        pos * 1.0 / mFileSize);
                 if (!keepGoing) {
                     break;
                 }
@@ -170,17 +168,17 @@ public class CheapMP3 extends SoundFile {
                 mGlobalChannels = 1;
                 if (mpgVersion == 1) {
                     gain = ((buffer[10] & 0x01) << 7) +
-                        ((buffer[11] & 0xFE) >> 1);
+                            ((buffer[11] & 0xFE) >> 1);
                 } else {
                     gain = ((buffer[9] & 0x03) << 6) +
-                    ((buffer[10] & 0xFC) >> 2);
+                            ((buffer[10] & 0xFC) >> 2);
                 }
             } else {
                 // 2 channels
                 mGlobalChannels = 2;
                 if (mpgVersion == 1) {
-                    gain = ((buffer[9]  & 0x7F) << 1) +
-                        ((buffer[10] & 0x80) >> 7);
+                    gain = ((buffer[9] & 0x7F) << 1) +
+                            ((buffer[10] & 0x80) >> 7);
                 } else {
                     gain = 0;  // ???
                 }
@@ -205,7 +203,7 @@ public class CheapMP3 extends SoundFile {
 
                 mAvgBitRate = mBitrateSum / mNumFrames;
                 int totalFramesGuess =
-                    ((mFileSize / mAvgBitRate) * sampleRate) / 144000;
+                        ((mFileSize / mAvgBitRate) * sampleRate) / 144000;
                 int newMaxFrames = totalFramesGuess * 11 / 10;
                 if (newMaxFrames < mMaxFrames * 2)
                     newMaxFrames = mMaxFrames * 2;
@@ -233,13 +231,13 @@ public class CheapMP3 extends SoundFile {
     }
 
     static private int BITRATES_MPEG1_L3[] = {
-        0,  32,  40,  48,  56,  64,  80,  96,
-        112, 128, 160, 192, 224, 256, 320,  0 };
+            0, 32, 40, 48, 56, 64, 80, 96,
+            112, 128, 160, 192, 224, 256, 320, 0};
     static private int BITRATES_MPEG2_L3[] = {
-        0,   8,  16,  24,  32,  40,  48,  56,
-        64,  80,  96, 112, 128, 144, 160, 0 };
+            0, 8, 16, 24, 32, 40, 48, 56,
+            64, 80, 96, 112, 128, 144, 160, 0};
     static private int SAMPLERATES_MPEG1_L3[] = {
-        44100, 48000, 32000, 0 };
+            44100, 48000, 32000, 0};
     static private int SAMPLERATES_MPEG2_L3[] = {
-        22050, 24000, 16000, 0 };
+            22050, 24000, 16000, 0};
 };
