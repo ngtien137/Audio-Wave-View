@@ -54,6 +54,7 @@ public class AudioWaveView extends View {
     private Rect rectAnchorLeft = new Rect();
     private Rect rectAnchorRight = new Rect();
     private Rect rectTextValue = new Rect();
+    private RectF rectWaveBarBackground = new RectF();
 
     private Paint paintDefault = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintOverlayPick = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -66,6 +67,7 @@ public class AudioWaveView extends View {
     private Paint paintCenterProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintEditThumb = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint paintTextValue = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint paintWaveBarBackground = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private boolean isShowTimeLineIndicator = true;  //Có hiển thị các đường kẻ giá trị timeline hay không
     private float waveLinePadding = 0f; //Khoảng cách giữa cách đường sóng
@@ -266,6 +268,7 @@ public class AudioWaveView extends View {
             TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.AudioWaveView);
             paintBackground.setColor(ta.getColor(R.styleable.AudioWaveView_awv_background_color, Color.TRANSPARENT));
             audioBarHeight = ta.getDimension(R.styleable.AudioWaveView_awv_bar_audio_height, 0f);
+            paintWaveBarBackground.setColor(ta.getColor(R.styleable.AudioWaveView_awv_wave_bar_background_color, Color.TRANSPARENT));
 
             int overlayColorPick = ta.getColor(R.styleable.AudioWaveView_awv_overlay_color_pick, getAppColor(R.color.color_transparent));
             paintOverlayPick.setColor(overlayColorPick);
@@ -881,6 +884,16 @@ public class AudioWaveView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawRect(rectBackground, paintBackground);
+        rectWaveBarBackground.top = rectWave.top;
+        rectWaveBarBackground.bottom = rectWave.bottom;
+        if (thumbProgressMode == ProgressMode.STATIC) {
+            rectWaveBarBackground.left = rectWave.left - getThumbProgressStaticPosition();
+            rectWaveBarBackground.right = rectWave.right + getThumbProgressStaticPosition();
+        } else {
+            rectWaveBarBackground.left = rectWave.left;
+            rectWaveBarBackground.right = rectWave.right;
+        }
+        canvas.drawRect(rectWaveBarBackground, paintWaveBarBackground);
         canvas.drawRect(rectWave, paintBackground);
 
         if (hasSoundFile() && mHeightsAtThisZoomLevel != null && mHeightsAtThisZoomLevel.length > 0) {

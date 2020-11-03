@@ -6,6 +6,7 @@
         <attr name="awv_overlay_color_pick" format="color" />
         <attr name="awv_background_color" format="color" />
         <attr name="awv_bar_audio_height" format="dimension" />
+        <attr name="awv_wave_bar_background_color" format="color" />
 
         <attr name="awv_wave_color" format="color" />
         <attr name="awv_wave_line_size" format="dimension" />
