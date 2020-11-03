@@ -141,3 +141,39 @@ dependencies {
 
 </declare-styleable>
 ```
+* Callbacks and listeners
+```java
+
+audioWaveView.setInteractedListener(new AudioWaveView.IInteractedListener() {
+  ...
+});
+audioWaveView.setAudioListener(new AudioWaveView.IAudioListener() {
+  ...
+});
+
+public interface IAudioListener {
+    void onLoadingAudio(int progress, boolean prepareView);
+
+    void onLoadingAudioComplete();
+
+    void onLoadingAudioError(Exception exceptionError);
+}
+
+public interface IInteractedListener {
+    void onTouchDownAudioBar(float touchProgress, boolean touchInBar);
+
+    void onClickAudioBar(float touchProgress, boolean touchInBar);
+
+    void onTouchReleaseAudioBar(float touchProgress, boolean touchInBar);
+
+    void onAudioBarScaling();
+
+    void onRangerChanging(float minProgress, float maxProgress, AdjustMode adjustMode);
+
+    void onStopFling(boolean isForcedStop);
+
+    void onStartFling();
+
+    void onProgressThumbChanging(float progress, ProgressAdjustMode progressAdjustMode);
+}
+```
