@@ -1738,7 +1738,7 @@ public class AudioWaveView extends View {
         return thumbIndex;
     }
 
-    public void clearCache() {
+    public static void clearCache() {
         mapCache.clear();
     }
 
