@@ -63,6 +63,7 @@ public class SoundFile {
     protected int[] mFrameGains;
     protected int[] mFrameLens;
     protected int[] mFrameOffsets;
+    protected boolean isFileNotSupported;
 
     // Progress listener interface.
     public interface ProgressListener {
@@ -86,7 +87,7 @@ public class SoundFile {
 
     // TODO(nfaralli): what is the real list of supported extensions? Is it device dependent?
     public static String[] getSupportedExtensions() {
-        return new String[]{"mp3", "wav", "3gpp", "3gp", "amr", "aac", "m4a", "ogg"};
+        return new String[]{"mp3", "wav", "3gpp", "3gp", "amr", "aac", "m4a", "ogg", "flac"};
     }
 
     public static boolean isFilenameSupported(String filename) {
@@ -114,28 +115,23 @@ public class SoundFile {
         if (components.length < 2) {
             return null;
         }
-        if (!Arrays.asList(getSupportedExtensions()).contains(components[components.length - 1])) {
-            return null;
-        }
         SoundFile soundFile = new SoundFile();
-        if (fileName.toLowerCase().endsWith("mp3")) {
-            soundFile = new CheapMP3();
-            soundFile.mInputFile = f;
+        try {
+            if (!Arrays.asList(getSupportedExtensions()).contains(components[components.length - 1])) {
+                soundFile.setDuration(getDuration(f));
+                soundFile.isFileNotSupported = true;
+                return soundFile;
+            }
+            if (fileName.toLowerCase().endsWith("mp3")) {
+                soundFile = new CheapMP3();
+                soundFile.mInputFile = f;
+            }
+            soundFile.setProgressListener(progressListener);
+            soundFile.ReadFile(f);
+        } catch (NullPointerException ex) {
+            soundFile.setDuration(getDuration(f));
+            soundFile.isFileNotSupported = true;
         }
-        soundFile.setProgressListener(progressListener);
-        soundFile.ReadFile(f);
-        return soundFile;
-    }
-
-    // Create and return a SoundFile object by recording a mono audio stream.
-    public static SoundFile record(ProgressListener progressListener) {
-        if (progressListener == null) {
-            // must have a progessListener to stop the recording.
-            return null;
-        }
-        SoundFile soundFile = new SoundFile();
-        soundFile.setProgressListener(progressListener);
-        soundFile.RecordAudio();
         return soundFile;
     }
 
@@ -228,7 +224,7 @@ public class SoundFile {
 
     protected void ReadFile(File inputFile)
             throws java.io.FileNotFoundException,
-            java.io.IOException, InvalidInputException, AudioWaveViewException {
+            java.io.IOException, InvalidInputException, AudioWaveViewException, NullPointerException {
         MediaExtractor extractor = new MediaExtractor();
         MediaFormat format = null;
         int i;

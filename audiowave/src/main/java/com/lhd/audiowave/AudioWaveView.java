@@ -174,7 +174,7 @@ public class AudioWaveView extends View {
             @Override
             public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
                 //eLog("Scaling: New: ", scaleGestureDetector.getCurrentSpanX(), "-- Old: ", currentScaleSpanX);
-                if (mHeightsAtThisZoomLevel == null || mHeightsAtThisZoomLevel.length == 0)
+                if (!hasSoundFile() && (mHeightsAtThisZoomLevel == null || mHeightsAtThisZoomLevel.length == 0))
                     return false;
                 float distanceSpan = scaleGestureDetector.getCurrentSpanX() - currentScaleSpanX;
                 float adjustZoom = 0f;
