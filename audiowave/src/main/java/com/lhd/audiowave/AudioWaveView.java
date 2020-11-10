@@ -1013,9 +1013,6 @@ public class AudioWaveView extends View {
                 if (i == countText - 1) {
                     float fixOffset = offset - spaceBetweenTwoTimeLine;
                     float endOffset = rectWave.right - offset;
-                    if (thumbProgressMode == ProgressMode.STATIC) {
-                        endOffset = rectWave.right;
-                    }
                     if (endOffset >= spaceBetweenTwoTimeLine) {
                         drawThisWave = true;
                     }
