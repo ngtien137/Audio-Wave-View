@@ -23,8 +23,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.lhd.audiowave.AudioWaveView;
-
 import static com.lhd.audiowave.AudioWaveView.ENABLE_LOG;
 
 public class MainActivity extends AppCompatActivity implements AudioWaveView.IAudioListener {

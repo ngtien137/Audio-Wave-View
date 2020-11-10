@@ -97,6 +97,7 @@ public class AudioWaveView extends View {
     private float textValuePadding = 0f;
     private boolean isTextValuePullTogether = true; //Text giá trị của thumb edit có đẩy nhau khi ở gần nhau được hay không
     private boolean isAutoAdjustZoomLevel = false; //Tự động chỉnh kích cỡ zoom level sau khi load audio path
+    private boolean isZoomAble = true;
 
     private ProgressMode thumbProgressMode = ProgressMode.FLEXIBLE;
     private float thumbProgressStaticPosition = 0f;
@@ -143,6 +144,8 @@ public class AudioWaveView extends View {
 
     private boolean isCancel;
     private CacheMode cacheMode = CacheMode.SINGLE;
+    private float currentScaleSpanX = 0f;
+    private Map<String, Boolean> listTempDrawPixelWave = new HashMap<>();
 
     public AudioWaveView(Context context) {
         super(context);
@@ -165,8 +168,6 @@ public class AudioWaveView extends View {
         initView(context, attrs);
     }
 
-    private float currentScaleSpanX = 0f;
-
     public void initView(Context context, @Nullable AttributeSet attrs) {
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         scaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.OnScaleGestureListener() {
@@ -174,7 +175,7 @@ public class AudioWaveView extends View {
             @Override
             public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
                 //eLog("Scaling: New: ", scaleGestureDetector.getCurrentSpanX(), "-- Old: ", currentScaleSpanX);
-                if (!hasSoundFile() && (mHeightsAtThisZoomLevel == null || mHeightsAtThisZoomLevel.length == 0))
+                if ((!hasSoundFile() && (mHeightsAtThisZoomLevel == null || mHeightsAtThisZoomLevel.length == 0)) || !isZoomAble)
                     return false;
                 float distanceSpan = scaleGestureDetector.getCurrentSpanX() - currentScaleSpanX;
                 float adjustZoom = 0f;
@@ -642,25 +643,30 @@ public class AudioWaveView extends View {
     private void computeDoublesForAllZoomLevels() {
         int numFrames = mSoundFile.getNumFrames();
         int[] frameGains = mSoundFile.getFrameGains();
+        int skipFrame = 0;
+        if (numFrames > 50000) {
+            skipFrame = 50;
+            numFrames = numFrames / skipFrame;
+        }
         double[] smoothedGains = new double[numFrames];
         if (numFrames == 1) {
             smoothedGains[0] = frameGains[0];
         } else if (numFrames == 2) {
             smoothedGains[0] = frameGains[0];
-            smoothedGains[1] = frameGains[1];
+            smoothedGains[1] = frameGains[1 + skipFrame];
         } else if (numFrames > 2) {
             smoothedGains[0] = (double) (
                     (frameGains[0] / 2.0) +
                             (frameGains[1] / 2.0));
             for (int i = 1; i < numFrames - 1; i++) {
                 smoothedGains[i] = (double) (
-                        (frameGains[i - 1] / 3.0) +
-                                (frameGains[i] / 3.0) +
-                                (frameGains[i + 1] / 3.0));
+                        (frameGains[i + skipFrame / 2 - 1] / 3.0) +
+                                (frameGains[i + skipFrame] / 3.0) +
+                                (frameGains[i + skipFrame / 2 + 1] / 3.0));
             }
             smoothedGains[numFrames - 1] = (double) (
-                    (frameGains[numFrames - 2] / 2.0) +
-                            (frameGains[numFrames - 1] / 2.0));
+                    (frameGains[numFrames + skipFrame / 2 - 2] / 2.0) +
+                            (frameGains[numFrames + skipFrame - 1] / 2.0));
         }
 
         // Make sure the range is no more than 0 - 255
@@ -788,7 +794,7 @@ public class AudioWaveView extends View {
                         if (audioListener != null) {
                             audioListener.onLoadingAudio((int) (fractionComplete * 100), false);
                         }
-                        eLog("Progress: ", (int) (fractionComplete * 100));
+                        //eLog("Progress: ", (int) (fractionComplete * 100));
                         return !isCancel;
                     }
                 });
@@ -845,6 +851,9 @@ public class AudioWaveView extends View {
                 if (minWaveZoomLevel > 1f / zoomLevel)
                     minWaveZoomLevel = 1f / zoomLevel;
                 AudioWaveView.this.waveZoomLevel = 1f / zoomLevel;
+                if (waveZoomLevel > maxWaveZoomLevel) {
+                    isZoomAble = false;
+                }
             }
         }
         calculateCurrentWidthView();
@@ -897,20 +906,32 @@ public class AudioWaveView extends View {
         canvas.drawRect(rectWave, paintBackground);
 
         if (hasSoundFile() && mHeightsAtThisZoomLevel != null && mHeightsAtThisZoomLevel.length > 0) {
+            listTempDrawPixelWave.clear();
             float centerY = rectWave.centerY();
             float offsetIncreaseValue = (waveLineWidth + waveLinePadding) * waveZoomLevel;
             int startIndex = (int) (getScrollX() / offsetIncreaseValue);
             if (startIndex < 0)
                 startIndex = 0;
-            float offset = 0f + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel + startIndex * offsetIncreaseValue;
+            float offset = 0f + startIndex * offsetIncreaseValue;// + (paintWave.getStrokeWidth() / 2f) * waveZoomLevel;
+            int timeDraw = 0;
+            int timeLoop = 0;
             for (int i = startIndex; i < mHeightsAtThisZoomLevel.length; i++) {
                 int value = mHeightsAtThisZoomLevel[i];
-                canvas.drawLine(offset, centerY - value, offset, centerY + value, paintWave);
+                String keyOffset = ((int) offset) + "";
+                if (listTempDrawPixelWave.get(keyOffset) == null) {
+                    listTempDrawPixelWave.put(keyOffset, true);
+                    canvas.drawLine(offset, centerY - value, offset, centerY + value, paintWave);
+                    timeDraw++;
+                } else {
+
+                }
+                timeLoop++;
                 offset += offsetIncreaseValue;
                 if (offset > getScrollX() + rectView.width()) {
                     break;
                 }
             }
+            eLog("TimeDraw: ", timeDraw, "---- Time Loop: ", timeLoop, " --- SIze: ", mHeightsAtThisZoomLevel.length);
         } else if (isShowRandomPreview) {
             drawRandomPreview(canvas);
         }
@@ -976,6 +997,9 @@ public class AudioWaveView extends View {
         float spaceBetweenTwoTimeLine = textTimeLineDefaultWidth * 2f;
         int countText = (int) (waveViewCurrentWidth / spaceBetweenTwoTimeLine);
         float offset = textTimeLineDefaultWidth / 2f;
+        if (thumbProgressMode == ProgressMode.STATIC) {
+            offset = rectView.left;
+        }
         canvas.drawText("00:00", offset, yText, paintTimeLine);
         drawTimeLineIndicator(canvas, offset, timeLineIndicatorHeight, paintTimeLineIndicator);
         drawTimeLineIndicator(canvas, spaceBetweenTwoTimeLine / 2f, timeLineIndicatorHeight / 2f, paintTimeLineIndicatorSub);
@@ -988,7 +1012,11 @@ public class AudioWaveView extends View {
                 boolean drawThisWave = false;
                 if (i == countText - 1) {
                     float fixOffset = offset - spaceBetweenTwoTimeLine;
-                    if (rectWave.right - offset >= spaceBetweenTwoTimeLine) {
+                    float endOffset = rectWave.right - offset;
+                    if (thumbProgressMode == ProgressMode.STATIC) {
+                        endOffset = rectWave.right;
+                    }
+                    if (endOffset >= spaceBetweenTwoTimeLine) {
                         drawThisWave = true;
                     }
                     //Không vẽ time line ở đây vì quá gần với timeline cuối
@@ -1011,6 +1039,9 @@ public class AudioWaveView extends View {
             String lastTime = convertTimeToTimeFormat(duration);
             loadTextTimelineSizeDefault(lastTime);
             offset = rectWave.right - rectTimeLine.width() / 2f;
+            if (thumbProgressMode == ProgressMode.STATIC) {
+                offset = rectWave.right;
+            }
             canvas.drawText(lastTime, offset, yText, paintTimeLine);
             drawTimeLineIndicator(canvas, offset, timeLineIndicatorHeight, paintTimeLineIndicator);
         }
@@ -1473,6 +1504,11 @@ public class AudioWaveView extends View {
             return ThumbIndex.THUMB_NONE;
     }
 
+    @Override
+    synchronized public void invalidate() {
+        super.invalidate();
+    }
+
     public interface IAudioListener {
         void onLoadingAudio(int progress, boolean prepareView);
 
@@ -1736,6 +1772,10 @@ public class AudioWaveView extends View {
 
     public int getThumbIndex() {
         return thumbIndex;
+    }
+
+    public int getLastFocusThumbIndex() {
+        return lastFocusThumbIndex;
     }
 
     public static void clearCache() {

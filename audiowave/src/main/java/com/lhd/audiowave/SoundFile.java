@@ -104,7 +104,7 @@ public class SoundFile {
     public static SoundFile create(String fileName,
                                    ProgressListener progressListener)
             throws java.io.FileNotFoundException,
-            java.io.IOException, InvalidInputException, AudioWaveViewException {
+            IOException, InvalidInputException, AudioWaveViewException {
         // First check that the file exists and that its extension is supported.
         File f = new File(fileName);
         if (!f.exists()) {
@@ -128,7 +128,7 @@ public class SoundFile {
             }
             soundFile.setProgressListener(progressListener);
             soundFile.ReadFile(f);
-        } catch (NullPointerException ex) {
+        } catch (IllegalArgumentException | NullPointerException ex) {
             soundFile.setDuration(getDuration(f));
             soundFile.isFileNotSupported = true;
         }
@@ -224,7 +224,7 @@ public class SoundFile {
 
     protected void ReadFile(File inputFile)
             throws java.io.FileNotFoundException,
-            java.io.IOException, InvalidInputException, AudioWaveViewException, NullPointerException {
+            IOException, InvalidInputException, AudioWaveViewException, IllegalArgumentException, NullPointerException {
         MediaExtractor extractor = new MediaExtractor();
         MediaFormat format = null;
         int i;
@@ -408,7 +408,7 @@ public class SoundFile {
                 value = 0;
                 for (int k = 0; k < mChannels; k++) {
                     if (mDecodedSamples.remaining() > 0) {
-                        value += java.lang.Math.abs(mDecodedSamples.get());
+                        value += Math.abs(mDecodedSamples.get());
                     }
                 }
                 value /= mChannels;
@@ -506,7 +506,7 @@ public class SoundFile {
             gain = -1;
             for (j = 0; j < getSamplesPerFrame(); j++) {
                 if (mDecodedSamples.remaining() > 0) {
-                    value = java.lang.Math.abs(mDecodedSamples.get());
+                    value = Math.abs(mDecodedSamples.get());
                 } else {
                     value = 0;
                 }
