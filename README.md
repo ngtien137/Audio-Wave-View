@@ -28,6 +28,7 @@ dependencies {
 * All attributes
 ```xml
 <declare-styleable name="AudioWaveView">
+  <attr name="awv_zoom_able" format="boolean" />
   <attr name="awv_show_random_preview" format="boolean" />
   <attr name="awv_overlay_color_remove" format="color" />
   <attr name="awv_overlay_color_pick" format="color" />
