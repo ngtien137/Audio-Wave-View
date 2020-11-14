@@ -844,9 +844,14 @@ public class AudioWaveView extends View {
         computeDoublesForAllZoomLevels();
         computeIntsForThisZoomLevel();
         if (isAutoAdjustZoomLevel) {
+            float extraPaddingForStaticMode = 0f;
+            if (thumbProgressMode == ProgressMode.STATIC) {
+                loadTextTimelineSizeDefault("00:00");
+                extraPaddingForStaticMode = rectTimeLine.width();
+            }
             int waveSize = mHeightsAtThisZoomLevel.length;
             float widthByWave = waveSize * waveLineWidth + (waveSize - 1) * waveLinePadding;
-            float zoomLevel = widthByWave / rectView.width();
+            float zoomLevel = widthByWave / (rectView.width() - extraPaddingForStaticMode);
             if (widthByWave > 1f) {
                 if (minWaveZoomLevel > 1f / zoomLevel)
                     minWaveZoomLevel = 1f / zoomLevel;
