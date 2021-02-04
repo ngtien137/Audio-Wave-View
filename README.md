@@ -53,7 +53,7 @@ dependencies {
   <attr name="awv_indicator_timeline_width" format="dimension" />
   <attr name="awv_indicator_timeline_height" format="dimension" />
   <attr name="awv_indicator_timeline_sub_indicator_count" format="integer" />
-  <attr name="awv_indicator_timeline_sub_indicator_color" format="integer" />
+  <attr name="awv_indicator_timeline_sub_indicator_color" format="color" />
 
   <attr name="awv_thumb_progress_size" format="dimension" />
   <attr name="awv_thumb_progress_color" format="color" />
