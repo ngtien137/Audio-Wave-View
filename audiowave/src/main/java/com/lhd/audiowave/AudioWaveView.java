@@ -786,6 +786,18 @@ public class AudioWaveView extends View {
     }
 
     public void setAudioPath(final String path) {
+        setAudioPath(path, -1);
+    }
+
+    /**
+     * @param path
+     * @param definedDuration
+     * MediaMetadataRetriever always return duration = 0 for audio has duration too short such as less than 1000ms
+     * So, you need pass your duration you get from another way to this function for view working correctly
+     * You can get correct duration with Exo player or media player
+     */
+
+    public void setAudioPath(final String path, long definedDuration) {
         Exception exceptionError = null;
         minWaveZoomLevel = defaultMinWaveZoomLevel;
         try {
@@ -812,7 +824,7 @@ public class AudioWaveView extends View {
             }
             if (isCancel)
                 return;
-            loadViewWithCurrentSoundFile();
+            loadViewWithCurrentSoundFile(definedDuration);
         } catch (IOException e) {
             exceptionError = e;
             eLog("Loi doc ghi voi file: ", path);
@@ -831,8 +843,11 @@ public class AudioWaveView extends View {
         isCancel = false;
     }
 
-    private void loadViewWithCurrentSoundFile() {
-        duration = mSoundFile.getDuration();
+    private void loadViewWithCurrentSoundFile(long definedDuration) {
+        if (definedDuration == -1)
+            duration = mSoundFile.getDuration();
+        else
+            duration = definedDuration;
         progress = 0f;
         if (modeEdit == ModeEdit.CUT_OUT) {
             leftProgress = duration / 2f - minRangeProgress / 2f;
