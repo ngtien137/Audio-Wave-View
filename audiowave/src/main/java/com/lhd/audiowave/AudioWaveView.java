@@ -10,6 +10,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -27,6 +28,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -786,23 +788,34 @@ public class AudioWaveView extends View {
     }
 
     public void setAudioPath(final String path) {
-        setAudioPath(path, -1);
+        File file = new File(path);
+        setAudioPath(file, -1);
+    }
+
+    public void setAudioUri(Context context, final Uri uri, String extension, long definedDuration) {
+        File file = AudioWaveViewFileHelper.getFileFromUri(context, uri, extension);
+        setAudioPath(file, definedDuration);
+    }
+
+    public void setAudioUri(Context context, final Uri uri, String extension) {
+        File file = AudioWaveViewFileHelper.getFileFromUri(getContext(), uri, extension);
+        setAudioPath(file, -1);
     }
 
     /**
-     * @param path
-     * @param definedDuration
-     * MediaMetadataRetriever always return duration = 0 for audio has duration too short such as less than 1000ms
-     * So, you need pass your duration you get from another way to this function for view working correctly
-     * You can get correct duration with Exo player or media player
+     * @param file
+     * @param definedDuration MediaMetadataRetriever always return duration = 0 for audio has duration too short such as less than 1000ms
+     *                        So, you need pass your duration you get from another way to this function for view working correctly
+     *                        You can get correct duration with Exo player or media player
      */
 
-    public void setAudioPath(final String path, long definedDuration) {
+    public void setAudioPath(final File file, long definedDuration) {
         Exception exceptionError = null;
         minWaveZoomLevel = defaultMinWaveZoomLevel;
+        String path = file.getAbsolutePath();
         try {
             if (cacheMode == CacheMode.NONE || mapCache.get(path) == null) {
-                mSoundFile = SoundFile.create(path, new SoundFile.ProgressListener() {
+                mSoundFile = SoundFile.create(file, new SoundFile.ProgressListener() {
                     @Override
                     public boolean reportProgress(double fractionComplete) {
                         if (audioListener != null) {

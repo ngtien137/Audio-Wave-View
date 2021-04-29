@@ -25,11 +25,13 @@ import android.widget.Toast;
 
 import com.lhd.audiowave.AudioWaveView;
 
+import java.io.File;
+
 import static com.lhd.audiowave.AudioWaveView.ENABLE_LOG;
 
 public class MainActivity extends AppCompatActivity implements AudioWaveView.IAudioListener {
 
-    private String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+    private String[] permissions;
     private AudioWaveView audioWaveView;
     private LinearLayout llLoading;
     private TextView tvLoading;
@@ -52,6 +54,13 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+        } else {
+            permissions = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE};
+        }
+
         audioWaveView = findViewById(R.id.audioView);
         llLoading = findViewById(R.id.llLoading);
         tvLoading = findViewById(R.id.tvLoading);
@@ -146,7 +155,14 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
                 Uri uri = data.getData();
                 eLog(uri);
                 final String path = getAudioPath(uri);
+                final File file = new File(path);
+                String[] listForExtension = path.split("\\.");
+                String extension = "";
+                if (listForExtension != null && listForExtension.length > 0) {
+                    extension = listForExtension[listForExtension.length - 1];
+                }
                 eLog("Path: ", path);
+                String finalExtension = extension;
                 simpleRxTask = new SimpleRxTask(new SimpleRxTask.Listener() {
                     @Override
                     public void onStart() {
@@ -161,7 +177,11 @@ public class MainActivity extends AppCompatActivity implements AudioWaveView.IAu
 
                     @Override
                     public void onDoing() {
-                        audioWaveView.setAudioPath(path);
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                            audioWaveView.setAudioPath(path);
+                        } else {
+                            audioWaveView.setAudioUri(MainActivity.this, uri, finalExtension);
+                        }
                     }
 
                     @Override

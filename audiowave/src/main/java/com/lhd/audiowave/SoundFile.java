@@ -16,6 +16,7 @@
 
 package com.lhd.audiowave;
 
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaCodec;
@@ -23,12 +24,15 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -107,8 +111,13 @@ public class SoundFile {
             IOException, InvalidInputException, AudioWaveViewException {
         // First check that the file exists and that its extension is supported.
         File f = new File(fileName);
+        return create(f, progressListener);
+    }
+
+    public static SoundFile create(File f, ProgressListener progressListener) throws java.io.FileNotFoundException,
+            IOException, InvalidInputException, AudioWaveViewException {
         if (!f.exists()) {
-            throw new java.io.FileNotFoundException(fileName);
+            throw new java.io.FileNotFoundException(f.getAbsolutePath());
         }
         String name = f.getName().toLowerCase();
         String[] components = name.split("\\.");
@@ -122,7 +131,7 @@ public class SoundFile {
                 soundFile.isFileNotSupported = true;
                 return soundFile;
             }
-            if (fileName.toLowerCase().endsWith("mp3")) {
+            if (f.getAbsolutePath().toLowerCase().endsWith("mp3")) {
                 soundFile = new CheapMP3();
                 soundFile.mInputFile = f;
             }
@@ -222,14 +231,28 @@ public class SoundFile {
         mFileSize = (int) mInputFile.length();
     }
 
-    protected void ReadFile(File inputFile)
-            throws java.io.FileNotFoundException,
+    protected void ReadFile(Context context, Uri uri, File inputFile) throws java.io.FileNotFoundException,
             IOException, InvalidInputException, AudioWaveViewException, IllegalArgumentException, NullPointerException {
         MediaExtractor extractor = new MediaExtractor();
-        MediaFormat format = null;
-        int i;
-        initFileInfoWithInputFile(inputFile);
+        FileDescriptor fileDescriptor = ((FileInputStream) context.getContentResolver().openInputStream(uri)).getFD();
+        extractor.setDataSource(fileDescriptor);
+        ReadFile(extractor, inputFile);
+    }
+
+
+    protected void ReadFile(File inputFile) throws java.io.FileNotFoundException,
+            IOException, InvalidInputException, AudioWaveViewException, IllegalArgumentException, NullPointerException {
+        MediaExtractor extractor = new MediaExtractor();
         extractor.setDataSource(mInputFile.getPath());
+        ReadFile(extractor, inputFile);
+    }
+
+    protected void ReadFile(MediaExtractor extractor, File inputFile)
+            throws java.io.FileNotFoundException,
+            IOException, InvalidInputException, AudioWaveViewException, IllegalArgumentException, NullPointerException {
+        int i;
+        MediaFormat format = null;
+        initFileInfoWithInputFile(inputFile);
         int numTracks = extractor.getTrackCount();
         // find and select the first audio track present in the file.
         for (i = 0; i < numTracks; i++) {
